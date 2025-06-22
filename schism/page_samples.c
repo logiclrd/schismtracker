@@ -45,6 +45,8 @@ static struct vgamem_overlay sample_image = {
 	NULL, 0, 0, 0,
 };
 
+#define VISIBLE_LINES (VGAMEM_ROWS - 15)
+
 static int dialog_f1_hack = 0;
 
 static struct widget widgets_samplelist[20];
@@ -107,7 +109,7 @@ static int _last_vis_sample(void)
 			j = i;
 		}
 	}
-	while ((j + 34) > n) n += 34;
+	while ((j + VISIBLE_LINES - 1) > n) n += VISIBLE_LINES - 1;
 	if (n >= MAX_SAMPLES) n = MAX_SAMPLES - 1;
 	return n;
 }
@@ -120,8 +122,8 @@ static void sample_list_reposition(void)
 		top_sample = current_sample;
 		if (top_sample < 1)
 			top_sample = 1;
-	} else if (current_sample > top_sample + 34) {
-		top_sample = current_sample - 34;
+	} else if (current_sample > top_sample + VISIBLE_LINES - 1) {
+		top_sample = current_sample - VISIBLE_LINES + 1;
 	}
 	if (dialog_f1_hack
 	    && status.current_page == PAGE_SAMPLE_LIST
@@ -175,7 +177,7 @@ static void sample_list_draw_list(void)
 	song_get_playing_samples(is_playing);
 
 	/* list */
-	for (pos = 0, n = top_sample; pos < 35; pos++, n++) {
+	for (pos = 0, n = top_sample; pos < VISIBLE_LINES; pos++, n++) {
 		sample = song_get_sample(n);
 		is_selected = (n == current_sample);
 		has_data = (sample->data != NULL);
@@ -212,7 +214,7 @@ static void sample_list_draw_list(void)
 		sample = song_get_sample(current_sample);
 		has_data = (sample->data != NULL);
 
-		if (pos < 0 || pos > 34) {
+		if (pos < 0 || pos > VISIBLE_LINES - 1) {
 			/* err... */
 		} else if (sample_list_cursor_pos == 25) {
 			draw_text("Play", 31, 13 + pos, 0, (has_data ? 3 : 6));
@@ -418,7 +420,7 @@ static int sample_list_handle_key_on_list(struct key_event * k)
 		if (k->state == KEY_RELEASE)
 			status.flags |= CLIPPY_PASTE_SELECTION;
 		return 1;
-	} else if (k->state == KEY_PRESS && k->mouse != MOUSE_NONE && k->x >= 5 && k->y >= 13 && k->y <= 47 && k->x <= 34) {
+	} else if (k->state == KEY_PRESS && k->mouse != MOUSE_NONE && k->x >= 5 && k->y >= 13 && k->y <= VGAMEM_ROWS - 3 && k->x <= 34) {
 		if (k->mouse == MOUSE_SCROLL_UP) {
 			top_sample -= MOUSE_SCROLL_LINES;
 			if (top_sample < 1) top_sample = 1;
@@ -1764,7 +1766,7 @@ static void sample_list_draw_const(void)
 {
 	int n;
 
-	draw_box(4, 12, 35, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(4, 12, 35, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
 	draw_box(63, 12, 77, 24, BOX_THICK | BOX_INNER | BOX_INSET);
 
 	draw_box(36, 12, 53, 18, BOX_THIN | BOX_INNER | BOX_INSET);
@@ -2045,7 +2047,7 @@ void sample_list_load_page(struct page *page)
 	widgets_samplelist[0].x = 5;
 	widgets_samplelist[0].y = 13;
 	widgets_samplelist[0].width = 30;
-	widgets_samplelist[0].height = 35;
+	widgets_samplelist[0].height = VGAMEM_ROWS - 15;
 
 	/* 1 -> 6 = middle column */
 	widget_create_thumbbar(widgets_samplelist + 1, 38, 16, 9, 1, 2, 7, update_values_in_song, 0, 64);

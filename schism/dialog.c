@@ -65,6 +65,8 @@ void dialog_draw(void)
 	int n, d;
 
 	for (d = 0; d < num_dialogs; d++) {
+		draw_offset(dialogs[d].dx, dialogs[d].dy);
+
 		n = dialogs[d].total_widgets;
 
 		/* draw the border and background */
@@ -87,6 +89,9 @@ void dialog_draw(void)
 			widget_draw_widget(dialogs[d].widgets + n, n == dialogs[d].selected_widget);
 		}
 	}
+
+	/* clear offset for non-dialog drawing */
+	draw_offset(0, 0);
 }
 
 /* --------------------------------------------------------------------- */
@@ -112,11 +117,13 @@ void dialog_destroy(void)
 		selected_widget = &(dialogs[d].selected_widget);
 		total_widgets = &(dialogs[d].total_widgets);
 		status.dialog_type = dialogs[d].type;
+		status.dialog = dialogs + d;
 	} else {
 		widgets = ACTIVE_PAGE.widgets;
 		selected_widget = &(ACTIVE_PAGE.selected_widget);
 		total_widgets = &(ACTIVE_PAGE.total_widgets);
 		status.dialog_type = DIALOG_NONE;
+		status.dialog = NULL;
 	}
 
 	/* it's up to the calling function to redraw the page */
@@ -377,6 +384,10 @@ struct dialog *dialog_create(int type, const char *text, void (*action_yes) (voi
 		break;
 	}
 
+	// Recentre the dialog. Dialogs that don't want to be centred will need to clear this (e.g. minipop).
+	dialogs[d].dx = (VGAMEM_COLUMNS / 2) - (80 / 2);
+	dialogs[d].dy = (VGAMEM_ROWS / 2) - (50 / 2);
+
 	dialogs[d].type = type;
 	widgets = dialogs[d].widgets;
 	selected_widget = &(dialogs[d].selected_widget);
@@ -385,6 +396,7 @@ struct dialog *dialog_create(int type, const char *text, void (*action_yes) (voi
 	num_dialogs++;
 
 	status.dialog_type = type;
+	status.dialog = dialogs + d;
 	status.flags |= NEED_UPDATE;
 	return &dialogs[d];
 }
@@ -414,6 +426,10 @@ struct dialog *dialog_create_custom(int x, int y, int w, int h, struct widget *d
 	d->total_widgets = dialog_total_widgets;
 	d->draw_const = draw_const;
 
+	// Recentre the dialog. Dialogs that don't want to be centred will need to clear this (e.g. minipop).
+	d->dx = (VGAMEM_COLUMNS / 2) - (80 / 2);
+	d->dy = (VGAMEM_ROWS / 2) - (50 / 2);
+
 	d->text = NULL;
 	d->data = data;
 	d->action_yes = NULL;
@@ -422,6 +438,8 @@ struct dialog *dialog_create_custom(int x, int y, int w, int h, struct widget *d
 	d->handle_key = NULL;
 
 	status.dialog_type = DIALOG_CUSTOM;
+	status.dialog = d;
+
 	widgets = d->widgets;
 	selected_widget = &(d->selected_widget);
 	total_widgets = &(d->total_widgets);

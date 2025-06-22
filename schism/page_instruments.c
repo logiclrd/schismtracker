@@ -198,6 +198,8 @@ static void restore_envelope(int slot, song_envelope_t *e, unsigned int sec)
 static void instrument_list_draw_list(void);
 
 /* --------------------------------------------------------------------------------------------------------- */
+#define VISIBLE_LINES (VGAMEM_ROWS - 15)
+
 static int _last_vis_inst(void)
 {
 	int i, j, n;
@@ -210,8 +212,8 @@ static int _last_vis_inst(void)
 			j = i;
 		}
 	}
-	while ((j + 34) > n)
-		n += 34;
+	while ((j + VISIBLE_LINES - 1) > n)
+		n += VISIBLE_LINES - 1;
 	return MIN(n, MAX_INSTRUMENTS - 1);
 }
 /* the actual list */
@@ -223,8 +225,8 @@ static void instrument_list_reposition(void)
 		if (top_instrument < 1) {
 			top_instrument = 1;
 		}
-	} else if (current_instrument > top_instrument + 34) {
-		top_instrument = current_instrument - 34;
+	} else if (current_instrument > top_instrument + VISIBLE_LINES - 1) {
+		top_instrument = current_instrument - VISIBLE_LINES + 1;
 	}
 }
 
@@ -394,7 +396,7 @@ static void instrument_list_draw_list(void)
 
 	song_get_playing_instruments(is_playing);
 
-	for (pos = 0, n = top_instrument; pos < 35; pos++, n++) {
+	for (pos = 0, n = top_instrument; pos < VISIBLE_LINES; pos++, n++) {
 		ins = song_get_instrument(n);
 		is_current = (n == current_instrument);
 
@@ -455,7 +457,7 @@ static int instrument_list_handle_key_on_list(struct key_event * k)
 {
 	int new_ins = current_instrument;
 
-	if (k->state == KEY_PRESS && k->mouse != MOUSE_NONE && k->y >= 13 && k->y <= 47 && k->x >= 5 && k->x <= 30) {
+	if (k->state == KEY_PRESS && k->mouse != MOUSE_NONE && k->y >= 13 && k->y <= VGAMEM_ROWS - 3 && k->x >= 5 && k->x <= 30) {
 		if (k->mouse == MOUSE_CLICK) {
 			new_ins = (k->y - 13) + top_instrument;
 			if (instrument_cursor_pos < 25)
@@ -480,7 +482,7 @@ static int instrument_list_handle_key_on_list(struct key_event * k)
 			return 1;
 		} else if (k->mouse == MOUSE_SCROLL_DOWN) {
 			top_instrument += MOUSE_SCROLL_LINES;
-			if (top_instrument > (_last_vis_inst()-34)) top_instrument = _last_vis_inst()-34;
+			if (top_instrument > (_last_vis_inst()-VISIBLE_LINES+1)) top_instrument = _last_vis_inst()-VISIBLE_LINES+1;
 			status.flags |= NEED_UPDATE;
 			return 1;
 		}
@@ -675,12 +677,14 @@ static int instrument_list_handle_key_on_list(struct key_event * k)
 /* --------------------------------------------------------------------- */
 /* note translation table */
 
+#define VISIBLE_NOTES (VISIBLE_LINES - 3)
+
 static void note_trans_reposition(void)
 {
 	if (note_trans_sel_line < note_trans_top_line) {
 		note_trans_top_line = note_trans_sel_line;
-	} else if (note_trans_sel_line > note_trans_top_line + 31) {
-		note_trans_top_line = note_trans_sel_line - 31;
+	} else if (note_trans_sel_line > note_trans_top_line + VISIBLE_NOTES - 1) {
+		note_trans_top_line = note_trans_sel_line - VISIBLE_NOTES + 1;
 	}
 }
 
@@ -692,7 +696,7 @@ static void note_trans_draw(void)
 	song_instrument_t *ins = song_get_instrument(current_instrument);
 	char buf[4];
 
-	for (pos = 0, n = note_trans_top_line; pos < 32; pos++, n++) {
+	for (pos = 0, n = note_trans_top_line; pos < VISIBLE_NOTES; pos++, n++) {
 		bg = ((n == note_trans_sel_line) ? sel_bg : 0);
 
 		/* invalid notes are translated to themselves (and yes, this edits the actual instrument) */
@@ -730,25 +734,25 @@ static void note_trans_draw(void)
 	if (is_selected && !(status.flags & CLASSIC_MODE)) {
 		switch (note_trans_cursor_pos) {
 		case 0:
-			draw_char(171, 36, 48, 3, 2);
-			draw_char(171, 37, 48, 3, 2);
-			draw_char(169, 38, 48, 3, 2);
+			draw_char(171, 36, VGAMEM_ROWS - 2, 3, 2);
+			draw_char(171, 37, VGAMEM_ROWS - 2, 3, 2);
+			draw_char(169, 38, VGAMEM_ROWS - 2, 3, 2);
 			if (note_sample_mask) {
-				draw_char(169, 40, 48, 3, 2);
-				draw_char(169, 41, 48, 3, 2);
+				draw_char(169, 40, VGAMEM_ROWS - 2, 3, 2);
+				draw_char(169, 41, VGAMEM_ROWS - 2, 3, 2);
 			}
 			break;
 		case 1:
-			draw_char(169, 38, 48, 3, 2);
+			draw_char(169, 38, VGAMEM_ROWS - 2, 3, 2);
 			if (note_sample_mask) {
-				draw_char(170, 40, 48, 3, 2);
-				draw_char(170, 41, 48, 3, 2);
+				draw_char(170, 40, VGAMEM_ROWS - 2, 3, 2);
+				draw_char(170, 41, VGAMEM_ROWS - 2, 3, 2);
 			}
 			break;
 		case 2:
 		case 3:
-			draw_char(note_sample_mask ? 171 : 169, 40, 48, 3, 2);
-			draw_char(note_sample_mask ? 171 : 169, 41, 48, 3, 2);
+			draw_char(note_sample_mask ? 171 : 169, 40, VGAMEM_ROWS - 2, 3, 2);
+			draw_char(note_sample_mask ? 171 : 169, 41, VGAMEM_ROWS - 2, 3, 2);
 			break;
 		};
 	}
@@ -802,12 +806,12 @@ static int note_trans_handle_key(struct key_event * k)
 	} else if (k->mouse == MOUSE_SCROLL_UP || k->mouse == MOUSE_SCROLL_DOWN) {
 		if (k->state == KEY_PRESS) {
 			note_trans_top_line += (k->mouse == MOUSE_SCROLL_UP) ? -3 : 3;
-			note_trans_top_line = CLAMP(note_trans_top_line, 0, 119 - 31);
+			note_trans_top_line = CLAMP(note_trans_top_line, 0, 120 - VISIBLE_NOTES);
 			status.flags |= NEED_UPDATE;
 		}
 		return 1;
 	} else if (k->mouse != MOUSE_NONE) {
-		if (k->x >= 32 && k->x <= 41 && k->y >= 16 && k->y <= 47) {
+		if (k->x >= 32 && k->x <= 41 && k->y >= 16 && k->y <= VGAMEM_ROWS - 3) {
 			new_line = note_trans_top_line + k->y - 16;
 			if (new_line == prev_line) {
 				switch (k->x - 36) {
@@ -2652,7 +2656,7 @@ static void instrument_list_pitch_update_values(void)
 
 static void instrument_list_draw_const(void)
 {
-	draw_box(4, 12, 30, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(4, 12, 30, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
 }
 
 static void instrument_list_general_draw_const(void)
@@ -2661,7 +2665,7 @@ static void instrument_list_general_draw_const(void)
 
 	instrument_list_draw_const();
 
-	draw_box(31, 15, 42, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(31, 15, 42, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
 
 	/* Kind of a hack, and not really useful, but... :) */
 	if (status.flags & CLASSIC_MODE) {

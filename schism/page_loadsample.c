@@ -42,7 +42,8 @@
 /* --------------------------------------------------------------------------------------------------------- */
 /* the locals */
 static struct vgamem_overlay sample_image = {
-	52,25,76,28,
+	VGAMEM_COLUMNS-28,25,
+	VGAMEM_COLUMNS-4,28,
 	NULL, 0, 0, 0,
 };
 
@@ -107,6 +108,8 @@ static void clear_directory(void)
 	fake_slot_changed = 0;
 }
 
+#define VISIBLE_LINES (VGAMEM_ROWS - 15)
+
 static void file_list_reposition(void)
 {
 	dmoz_file_t *f;
@@ -115,8 +118,8 @@ static void file_list_reposition(void)
 	// XXX use CLAMP() here too, I can't brain
 	if (top_file > current_file)
 		top_file = current_file;
-	else if (current_file > top_file + 34)
-		top_file = current_file - 34;
+	else if (current_file > top_file + VISIBLE_LINES - 1)
+		top_file = current_file - VISIBLE_LINES + 1;
 
 	if (current_file >= 0 && current_file < flist.num_files) {
 		f = flist.files[current_file];
@@ -124,7 +127,7 @@ static void file_list_reposition(void)
 		if (f && f->smp_filename) {
 			strncpy(current_filename, f->smp_filename, ARRAY_SIZE(current_filename) - 1);
 		} else if (f && f->base) {
-			// FIXME 
+			// FIXME
 			void *fn = charset_iconv_easy(f->base, CHARSET_CHAR, CHARSET_CP437);
 			if (fn) {
 				strncpy(current_filename, fn, ARRAY_SIZE(current_filename) - 1);
@@ -227,91 +230,90 @@ static void load_sample_draw_const(void)
 	song_sample_t *s;
 	char sbuf[64];
 
-	draw_box(5, 12, 50, 48, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_fill_chars(6, 13, 49, 47, DEFAULT_FG, 0);
+	draw_box(5, 12, VGAMEM_COLUMNS - 30, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(6, 13, VGAMEM_ROWS - 31, VGAMEM_ROWS - 3, DEFAULT_FG, 0);
 
-	draw_fill_chars(64, 13, 77, 22, DEFAULT_FG, 0);
-	draw_box(62, 32, 72, 35, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_box(62, 36, 72, 40, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(VGAMEM_COLUMNS - 16, 13, VGAMEM_COLUMNS - 3, 22, DEFAULT_FG, 0);
+	draw_box(VGAMEM_COLUMNS - 18, 32, VGAMEM_COLUMNS - 8, 35, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(VGAMEM_COLUMNS - 18, 36, VGAMEM_COLUMNS - 8, 40, BOX_THICK | BOX_INNER | BOX_INSET);
 
-	draw_box(63, 12, 77, 23, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(VGAMEM_COLUMNS - 17, 12, VGAMEM_COLUMNS - 3, 23, BOX_THICK | BOX_INNER | BOX_INSET);
 
-	draw_box(51, 24, 77, 29, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_fill_chars(52, 25, 76, 28, DEFAULT_FG, 0);
+	draw_box(VGAMEM_COLUMNS - 29, 24, VGAMEM_COLUMNS - 3, 29, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(VGAMEM_COLUMNS - 28, 25, VGAMEM_COLUMNS - 4, 28, DEFAULT_FG, 0);
 
-	draw_box(51, 30, 77, 42, BOX_THIN | BOX_INNER | BOX_INSET);
+	draw_box(VGAMEM_COLUMNS - 29, 30, VGAMEM_COLUMNS - 3, 42, BOX_THIN | BOX_INNER | BOX_INSET);
 
-	draw_fill_chars(59, 44, 76, 47, DEFAULT_FG, 0);
-	draw_box(58, 43, 77, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(VGAMEM_COLUMNS - 21, 44, VGAMEM_COLUMNS - 4, 47, DEFAULT_FG, 0);
+	draw_box(VGAMEM_COLUMNS - 22, 43, VGAMEM_COLUMNS - 3, 48, BOX_THICK | BOX_INNER | BOX_INSET);
 
 	f = NULL;
 	if (current_file >= 0 && current_file < flist.num_files && flist.files[current_file]) {
 		f = flist.files[current_file];
 
 		sprintf(sbuf, "%07u", f->smp_length);
-		draw_text_len(sbuf, 13, 64, 22, 2, 0);
+		draw_text_len(sbuf, 13, VGAMEM_COLUMNS - 16, 22, 2, 0);
 
 		if (!f->smp_length && !f->smp_filename && !f->smp_flags) {
-			draw_text_len("No sample",13, 64, 21, 2, 0);
+			draw_text_len("No sample",13, VGAMEM_COLUMNS - 16, 21, 2, 0);
 		} else if (f->smp_flags & CHN_STEREO) {
 			draw_text_len(
 				(f->smp_flags & CHN_16BIT
 				? "16 bit Stereo" : "8 bit Stereo"),
-			13, 64, 21, 2, 0);
+			13, VGAMEM_COLUMNS - 16, 21, 2, 0);
 		} else {
 			draw_text_len(
 				(f->smp_flags & CHN_16BIT
 				? "16 bit" : "8 bit"),
-			13, 64, 21, 2, 0);
+			13, VGAMEM_COLUMNS - 16, 21, 2, 0);
 		}
 		if (f->description) {
 			draw_text_len(f->description,
 					18,
-					59, 44, 5, 0);
+					VGAMEM_COLUMNS - 21, 44, 5, 0);
 		} else {
 			switch (f->type) {
 			case TYPE_DIRECTORY:
 				draw_text("Directory",
-						59, 44, 5, 0);
+						VGAMEM_COLUMNS - 21, 44, 5, 0);
 				break;
 			default:
 				draw_text("Unknown format",
-						59, 44, 5, 0);
+						VGAMEM_COLUMNS - 21, 44, 5, 0);
 				break;
 			};
 		}
 		sprintf(sbuf, "%07llu", (unsigned long long)f->filesize);
-		draw_text(sbuf, 59, 45, 5,0);
+		draw_text(sbuf, VGAMEM_COLUMNS - 21, 45, 5,0);
 		str_from_date(f->timestamp, sbuf, cfg_str_date_format);
-		draw_text(sbuf, 59, 46, 5,0);
+		draw_text(sbuf, VGAMEM_COLUMNS - 21, 46, 5,0);
 		str_from_time(f->timestamp, sbuf, cfg_str_time_format);
-		draw_text(sbuf, 59, 47, 5,0);
+		draw_text(sbuf, VGAMEM_COLUMNS - 21, 47, 5,0);
 	}
 
-	/* these are exactly the same as in page_samples.c, apart from
-	 * 'quality' and 'length' being one line higher */
-	draw_text("Filename", 55, 13, 0, 2);
-	draw_text("Speed", 58, 14, 0, 2);
-	draw_text("Loop", 59, 15, 0, 2);
-	draw_text("LoopBeg", 56, 16, 0, 2);
-	draw_text("LoopEnd", 56, 17, 0, 2);
-	draw_text("SusLoop", 56, 18, 0, 2);
-	draw_text("SusLBeg", 56, 19, 0, 2);
-	draw_text("SusLEnd", 56, 20, 0, 2);
-	draw_text("Quality", 56, 21, 0, 2);
-	draw_text("Length", 57, 22, 0, 2);
+	/* these are the same labels as in page_samples.c, just positioned differently */
+	draw_text("Filename", VGAMEM_COLUMNS - 25, 13, 0, 2);
+	draw_text("Speed", VGAMEM_COLUMNS - 22, 14, 0, 2);
+	draw_text("Loop", VGAMEM_COLUMNS - 21, 15, 0, 2);
+	draw_text("LoopBeg", VGAMEM_COLUMNS - 24, 16, 0, 2);
+	draw_text("LoopEnd", VGAMEM_COLUMNS - 24, 17, 0, 2);
+	draw_text("SusLoop", VGAMEM_COLUMNS - 24, 18, 0, 2);
+	draw_text("SusLBeg", VGAMEM_COLUMNS - 24, 19, 0, 2);
+	draw_text("SusLEnd", VGAMEM_COLUMNS - 24, 20, 0, 2);
+	draw_text("Quality", VGAMEM_COLUMNS - 24, 21, 0, 2);
+	draw_text("Length", VGAMEM_COLUMNS - 23, 22, 0, 2);
 
 	/* these abbreviations are sucky and lame. any suggestions? */
-	draw_text("Def. Vol.", 53, 33, 0, 2);
-	draw_text("Glb. Vol.", 53, 34, 0, 2);
-	draw_text("Vib.Speed", 53, 37, 0, 2);
-	draw_text("Vib.Depth", 53, 38, 0, 2);
-	draw_text("Vib. Rate", 53, 39, 0, 2);
+	draw_text("Def. Vol.", VGAMEM_COLUMNS - 27, 33, 0, 2);
+	draw_text("Glb. Vol.", VGAMEM_COLUMNS - 27, 34, 0, 2);
+	draw_text("Vib.Speed", VGAMEM_COLUMNS - 27, 37, 0, 2);
+	draw_text("Vib.Depth", VGAMEM_COLUMNS - 27, 38, 0, 2);
+	draw_text("Vib. Rate", VGAMEM_COLUMNS - 27, 39, 0, 2);
 
-	draw_text("Format", 52, 44, 0, 2);
-	draw_text("Size", 54, 45, 0, 2);
-	draw_text("Date", 54, 46, 0, 2);
-	draw_text("Time", 54, 47, 0, 2);
+	draw_text("Format", VGAMEM_COLUMNS - 28, 44, 0, 2);
+	draw_text("Size", VGAMEM_COLUMNS - 26, 45, 0, 2);
+	draw_text("Date", VGAMEM_COLUMNS - 26, 46, 0, 2);
+	draw_text("Time", VGAMEM_COLUMNS - 26, 47, 0, 2);
 
 	if (fake_slot != KEYJAZZ_NOINST) {
 		s = song_get_sample(fake_slot);
@@ -376,7 +378,7 @@ static void file_list_draw(void)
 	   because there will always be at least "/" in the list */
 	if (top_file < 0) top_file = 0;
 	if (current_file < 0) current_file = 0;
-	for (n = top_file, pos = 13; n < flist.num_files && pos < 48; n++, pos++) {
+	for (n = top_file, pos = 13; n < flist.num_files && pos < VGAMEM_ROWS - 2; n++, pos++) {
 		file = flist.files[n];
 
 		if (n == current_file && ACTIVE_PAGE.selected_widget == 0) {
@@ -389,7 +391,7 @@ static void file_list_draw(void)
 		draw_text(str_from_num(3, n+1, buf), 2, pos, 0, 2);
 		draw_text_len(file->title ? file->title : "", 25, 6, pos, fg, bg);
 		draw_char(168, 31, pos, 2, bg);
-		draw_text_utf8_len(file->base ? file->base : "", 18, 32, pos, fg, bg);
+		draw_text_utf8_len(file->base ? file->base : "", VGAMEM_COLUMNS - 62, 32, pos, fg, bg);
 
 		/* this is stupid */
 		if (file->base && search_pos > -1) {
@@ -398,14 +400,14 @@ static void file_list_draw(void)
 				size_t len = charset_strncasecmplen(file->base, CHARSET_CHAR,
 					search_str, CHARSET_UCS4, search_pos);
 
-				draw_text_utf8_len(file->base, MIN(len, 18), 32, pos, 3, 1);
+				draw_text_utf8_len(file->base, MIN(len, VGAMEM_COLUMNS - 62), 32, pos, 3, 1);
 			}
 		}
 	}
 
 	/* draw the info for the current file (or directory...) */
 
-	while (pos < 48)
+	while (pos < VGAMEM_ROWS - 2)
 		draw_char(168, 31, pos++, 2, 0);
 }
 
@@ -698,7 +700,7 @@ static int file_list_handle_key(struct key_event * k)
 	}
 
 	if (k->mouse) {
-		if (k->x >= 6 && k->x <= 49 && k->y >= 13 && k->y <= 47) {
+		if (k->x >= 6 && k->x <= VGAMEM_COLUMNS - 31 && k->y >= 13 && k->y <= VGAMEM_ROWS - 3) {
 			search_pos = -1;
 			if (k->mouse == MOUSE_SCROLL_UP) {
 				new_file -= MOUSE_SCROLL_LINES;
@@ -712,8 +714,8 @@ static int file_list_handle_key(struct key_event * k)
 	switch (k->sym) {
 	case SCHISM_KEYSYM_UP:           new_file--; search_pos = -1; break;
 	case SCHISM_KEYSYM_DOWN:         new_file++; search_pos = -1; break;
-	case SCHISM_KEYSYM_PAGEUP:       new_file -= 35; search_pos = -1; break;
-	case SCHISM_KEYSYM_PAGEDOWN:     new_file += 35; search_pos = -1; break;
+	case SCHISM_KEYSYM_PAGEUP:       new_file -= VISIBLE_LINES; search_pos = -1; break;
+	case SCHISM_KEYSYM_PAGEDOWN:     new_file += VISIBLE_LINES; search_pos = -1; break;
 	case SCHISM_KEYSYM_HOME:         new_file = 0; search_pos = -1; break;
 	case SCHISM_KEYSYM_END:          new_file = flist.num_files - 1; search_pos = -1; break;
 
@@ -962,81 +964,81 @@ void load_sample_load_page(struct page *page)
 	widgets_loadsample[0].next.tab = 1;
 
 	widget_create_textentry(widgets_loadsample+1,
-			64, 13,
+			VGAMEM_COLUMNS - 16, 13,
 			13,
 				1,2, 9, handle_rename_op,
 				current_filename, sizeof(current_filename)-1);
 	sample_speed_pos = 0;
 	widget_create_numentry(widgets_loadsample+2,
-			64, 14,
+			VGAMEM_COLUMNS - 16, 14,
 			7,
 			1,3, 9, handle_load_update,
 			0, 9999999,
 			&sample_speed_pos);
 
 	widget_create_menutoggle(widgets_loadsample+3,
-			64, 15,
+			VGAMEM_COLUMNS - 16, 15,
 			2, 4,  0,  9,9, handle_load_update,
 			loop_states);
 
 	sample_loop_beg = 0;
 	widget_create_numentry(widgets_loadsample+4,
-			64, 16,
+			VGAMEM_COLUMNS - 16, 16,
 			7,
 			3,5, 9, handle_load_update,
 			0, 9999999,
 			&sample_loop_beg);
 	sample_loop_end = 0;
 	widget_create_numentry(widgets_loadsample+5,
-			64, 17,
+			VGAMEM_COLUMNS - 16, 17,
 			7,
 			4,6, 9, handle_load_update,
 			0, 9999999,
 			&sample_loop_end);
 
 	widget_create_menutoggle(widgets_loadsample+6,
-			64, 18,
+			VGAMEM_COLUMNS - 16, 18,
 			5, 7,  0,  9,9, handle_load_update,
 			loop_states);
 
 	sample_susloop_beg = 0;
 	widget_create_numentry(widgets_loadsample+7,
-			64, 19,
+			VGAMEM_COLUMNS - 16, 19,
 			7,
 			6,8, 9, handle_load_update,
 			0, 9999999,
 			&sample_susloop_beg);
 	sample_susloop_end = 0;
 	widget_create_numentry(widgets_loadsample+8,
-			64, 20,
+			VGAMEM_COLUMNS - 16, 20,
 			7,
 			7,9, 9, handle_load_update,
 			0, 9999999,
 			&sample_susloop_end);
 
 	widget_create_thumbbar(widgets_loadsample+9,
-			63, 33,
+			VGAMEM_COLUMNS - 17, 33,
 			9,
 			8, 10, 0, handle_load_update,
 			0,64);
 	widget_create_thumbbar(widgets_loadsample+10,
-			63, 34,
+			VGAMEM_COLUMNS - 17, 34,
 			9,
 			9, 11, 0, handle_load_update,
 			0,64);
 
 	widget_create_thumbbar(widgets_loadsample+11,
-			63, 37,
+			VGAMEM_COLUMNS - 17, 37,
 			9,
 			10, 12, 0, handle_load_update,
 			0,64);
 	widget_create_thumbbar(widgets_loadsample+12,
-			63, 38,
+			VGAMEM_COLUMNS - 17, 38,
 			9,
 			11, 13, 0, handle_load_update,
 			0,32);
 	widget_create_thumbbar(widgets_loadsample+13,
-			63, 39,
+			VGAMEM_COLUMNS - 17, 39,
 			9,
 			12, 13, 0, handle_load_update,
 			0,255);

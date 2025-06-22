@@ -210,7 +210,7 @@ void video_mousecursor(int vis)
 /* -------------------------------------------------- */
 /* mouse drawing */
 
-static inline void make_mouseline(unsigned int x, unsigned int v, unsigned int y, uint32_t mouseline[80], uint32_t mouseline_mask[80], unsigned int mouse_y)
+static inline void make_mouseline(unsigned int x, unsigned int v, unsigned int y, uint32_t mouseline[VGAMEM_COLUMNS], uint32_t mouseline_mask[VGAMEM_COLUMNS], unsigned int mouse_y)
 {
 	const struct mouse_cursor *cursor = &cursors[video.mouse.shape];
 	uint32_t i;
@@ -219,8 +219,8 @@ static inline void make_mouseline(unsigned int x, unsigned int v, unsigned int y
 	uint32_t z, zm;
 	uint32_t temp;
 
-	memset(mouseline,      0, 80 * sizeof(*mouseline));
-	memset(mouseline_mask, 0, 80 * sizeof(*mouseline));
+	memset(mouseline,      0, VGAMEM_COLUMNS * sizeof(*mouseline));
+	memset(mouseline_mask, 0, VGAMEM_COLUMNS * sizeof(*mouseline));
 
 	video_mousecursor_visible();
 
@@ -289,8 +289,8 @@ void video_blitLN(unsigned int bpp, unsigned char *pixels, unsigned int pitch, s
 	uint32_t pad;
 	int32_t fixedx, fixedy, scalex, scaley;
 	uint32_t y, x,ey,ex,t1,t2;
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 	unsigned int mouseline_x, mouseline_v;
 	int32_t iny, lasty;
 
@@ -418,8 +418,8 @@ void video_blitNN(unsigned int bpp, unsigned char *pixels, unsigned int pitch, u
 	const unsigned int mouseline_x = (mouse_x / 8);
 	const unsigned int mouseline_v = (mouse_x % 8);
 	const int pad = (pitch - (width * bpp));
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 	uint32_t y, last_scaled_y;
 	uint64_t fixedy;
 
@@ -491,8 +491,8 @@ void video_blitYY(unsigned char *pixels, unsigned int pitch, uint32_t tpal[256])
 
 	unsigned int mouseline_x = (mouse_x / 8);
 	unsigned int mouseline_v = (mouse_x % 8);
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 	int y;
 
 	for (y = 0; y < NATIVE_SCREEN_HEIGHT; y++) {
@@ -513,8 +513,8 @@ void video_blitUV(unsigned char *pixels, unsigned int pitch, uint32_t tpal[256])
 
 	const unsigned int mouseline_x = (mouse_x / 8);
 	const unsigned int mouseline_v = (mouse_x % 8);
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 
 	int y;
 	for (y = 0; y < NATIVE_SCREEN_HEIGHT; y++) {
@@ -532,8 +532,8 @@ void video_blitTV(unsigned char *pixels, unsigned int pitch, uint32_t tpal[256])
 	const unsigned int mouseline_x = (mouse_x / 8);
 	const unsigned int mouseline_v = (mouse_x % 8);
 	unsigned char cv8backing[NATIVE_SCREEN_WIDTH];
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 	int y, x;
 
 	for (y = 0; y < NATIVE_SCREEN_HEIGHT; y += 2) {
@@ -554,8 +554,8 @@ void video_blit11(unsigned int bpp, unsigned char *pixels, unsigned int pitch, u
 	const unsigned int mouseline_x = (mouse_x / 8);
 	const unsigned int mouseline_v = (mouse_x % 8);
 	unsigned int y, x;
-	uint32_t mouseline[80];
-	uint32_t mouseline_mask[80];
+	uint32_t mouseline[VGAMEM_COLUMNS];
+	uint32_t mouseline_mask[VGAMEM_COLUMNS];
 
 	for (y = 0; y < NATIVE_SCREEN_HEIGHT; y++) {
 		make_mouseline(mouseline_x, mouseline_v, y, mouseline, mouseline_mask, mouse_y);

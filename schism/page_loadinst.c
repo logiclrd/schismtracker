@@ -64,6 +64,8 @@ static dmoz_filelist_t flist;
 static int slash_search_mode = -1;
 static uint32_t slash_search_str[SCHISM_PATH_MAX]; /* UCS-4 */
 
+#define VISIBLE_ROWS (VGAMEM_ROWS - 15)
+
 /* get a color index from a dmoz_file_t 'type' field */
 static inline int get_type_color(int type)
 {
@@ -151,9 +153,9 @@ static int change_dir(const char *dir)
 
 static void load_instrument_draw_const(void)
 {
-	draw_fill_chars(6, 13, 67, 47, DEFAULT_FG, 0);
-	draw_box(50, 12, 61, 48, BOX_THIN | BOX_INNER | BOX_SHADE_NONE);
-	draw_box(5, 12, 68, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(6, 13, VGAMEM_COLUMNS - 13, VGAMEM_ROWS - 3, DEFAULT_FG, 0);
+	draw_box(VGAMEM_COLUMNS - 30, 12, VGAMEM_COLUMNS - 19, VGAMEM_ROWS - 2, BOX_THIN | BOX_INNER | BOX_SHADE_NONE);
+	draw_box(5, 12, VGAMEM_COLUMNS - 12, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
 
 }
 
@@ -219,30 +221,32 @@ static void file_list_draw(void)
 			bg = 0;
 		}
 
+#define FILENAME_COLUMN_WIDTH (VGAMEM_COLUMNS - 62)
+
 		draw_text(str_from_num(3, n, buf), 2, pos, 0, 2);
 		draw_text_len((file->title ? file->title : ""),
 						25, 6, pos, fg, bg);
 		draw_char(168, 31, pos, 2, bg);
-		draw_text_utf8_len(file->base ? file->base : "", 18, 32, pos, fg, bg);
+		draw_text_utf8_len(file->base ? file->base : "", FILENAME_COLUMN_WIDTH, 32, pos, fg, bg);
 		if (file->base && slash_search_mode > -1) {
 			if (charset_strncasecmp(file->base, CHARSET_CHAR,
 					slash_search_str, CHARSET_UCS4, slash_search_mode) == 0) {
 				size_t len = charset_strncasecmplen(file->base, CHARSET_CHAR,
 					slash_search_str, CHARSET_UCS4, slash_search_mode);
 
-				draw_text_utf8_len(file->base, MIN(len, 18), 32, pos, 3, 1);
+				draw_text_utf8_len(file->base, MIN(len, FILENAME_COLUMN_WIDTH), 32, pos, 3, 1);
 			}
 		}
 
 		if (file->sampsize > 1) {
 			sprintf(sbuf, "%d Samples", file->sampsize);
-			draw_text_len(sbuf, 10, 51, pos, fg, bg);
+			draw_text_len(sbuf, 10, VGAMEM_COLUMNS - 29, pos, fg, bg);
 		} else if (file->sampsize == 1) {
-			draw_text("1 Sample  ", 51, pos, fg, bg);
+			draw_text("1 Sample  ", VGAMEM_COLUMNS - 29, pos, fg, bg);
 		} else if (file->type & TYPE_MODULE_MASK) {
-			draw_text("\x9a\x9a""Module\x9a\x9a", 51, pos, fg, bg);
+			draw_text("\x9a\x9a""Module\x9a\x9a", VGAMEM_COLUMNS - 29, pos, fg, bg);
 		} else {
-			draw_text("          ", 51, pos, fg, bg);
+			draw_text("          ", VGAMEM_COLUMNS - 29, pos, fg, bg);
 		}
 		if (file->filesize > 1048576) {
 			sprintf(sbuf, "%llum", (unsigned long long)(file->filesize / 1048576));
@@ -253,12 +257,12 @@ static void file_list_draw(void)
 		} else {
 			*sbuf = 0;
 		}
-		draw_text_len(sbuf, 6, 62, pos, fg, bg);
+		draw_text_len(sbuf, 6, VGAMEM_COLUMNS - 18, pos, fg, bg);
 	}
 
 	/* draw the info for the current file (or directory...) */
 
-	while (pos < 48)
+	while (pos < VGAMEM_ROWS - 2)
 		draw_char(168, 31, pos++, 2, 0);
 }
 
@@ -412,7 +416,7 @@ static int file_list_handle_key(struct key_event * k)
 	new_file = CLAMP(new_file, 0, flist.num_files - 1);
 
 	if (k->mouse != MOUSE_NONE) {
-		if (k->x >= 6 && k->x <= 67 && k->y >= 13 && k->y <= 47) {
+		if (k->x >= 6 && k->x <= VGAMEM_COLUMNS - 13 && k->y >= 13 && k->y <= VGAMEM_ROWS - 3) {
 			slash_search_mode = -1;
 			if (k->mouse == MOUSE_SCROLL_UP) {
 				new_file -= MOUSE_SCROLL_LINES;
@@ -426,8 +430,8 @@ static int file_list_handle_key(struct key_event * k)
 	switch (k->sym) {
 	case SCHISM_KEYSYM_UP:           new_file--; slash_search_mode = -1; break;
 	case SCHISM_KEYSYM_DOWN:         new_file++; slash_search_mode = -1; break;
-	case SCHISM_KEYSYM_PAGEUP:       new_file -= 35; slash_search_mode = -1; break;
-	case SCHISM_KEYSYM_PAGEDOWN:     new_file += 35; slash_search_mode = -1; break;
+	case SCHISM_KEYSYM_PAGEUP:       new_file -= VISIBLE_ROWS; slash_search_mode = -1; break;
+	case SCHISM_KEYSYM_PAGEDOWN:     new_file += VISIBLE_ROWS; slash_search_mode = -1; break;
 	case SCHISM_KEYSYM_HOME:         new_file = 0; slash_search_mode = -1; break;
 	case SCHISM_KEYSYM_END:          new_file = flist.num_files - 1; slash_search_mode = -1; break;
 

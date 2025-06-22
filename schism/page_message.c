@@ -63,6 +63,8 @@ static int message_extfont = 1;
  * everything because it's always nice to have a bit extra space :) */
 #define LINE_WRAP 75
 
+#define VISIBLE_LINES (VGAMEM_ROWS - 15)
+
 /* --------------------------------------------------------------------- */
 
 static int message_handle_key_editmode(struct key_event * k);
@@ -144,8 +146,8 @@ static void message_reposition(void)
 {
 	if (cursor_line < top_line) {
 		top_line = cursor_line;
-	} else if (cursor_line > top_line + 34) {
-		top_line = cursor_line - 34;
+	} else if (cursor_line > top_line + VISIBLE_LINES - 1) {
+		top_line = cursor_line - VISIBLE_LINES + 1;
 	}
 }
 
@@ -233,7 +235,7 @@ static void message_draw(void)
 	int n, cp, clipl, clipr;
 	int skipc, cutc;
 
-	draw_fill_chars(2, 13, 77, 47, DEFAULT_FG, 0);
+	draw_fill_chars(2, 13, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 3, DEFAULT_FG, 0);
 
 	if (clippy_owner(CLIPPY_SELECT) == widgets_message) {
 		clipl = widgets_message[0].clip_start;
@@ -247,7 +249,7 @@ static void message_draw(void)
 		clipl = clipr = -1;
 	}
 
-	for (n = 0; n < 35; n++) {
+	for (n = 0; n < VISIBLE_LINES; n++) {
 		if (len < 0) {
 			break;
 		} else if (len > 0) {
@@ -490,12 +492,12 @@ static int message_handle_key_viewmode(struct key_event * k)
 	case SCHISM_KEYSYM_PAGEUP:
 		if (k->state == KEY_RELEASE)
 			return 0;
-		top_line -= 35;
+		top_line -= VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_PAGEDOWN:
 		if (k->state == KEY_RELEASE)
 			return 0;
-		top_line += 35;
+		top_line += VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_HOME:
 		if (k->state == KEY_RELEASE)
@@ -505,7 +507,7 @@ static int message_handle_key_viewmode(struct key_event * k)
 	case SCHISM_KEYSYM_END:
 		if (k->state == KEY_RELEASE)
 			return 0;
-		top_line = str_get_num_lines(current_song->message) - 34;
+		top_line = str_get_num_lines(current_song->message) - VISIBLE_LINES + 1;
 		break;
 	case SCHISM_KEYSYM_t:
 		if (k->state == KEY_RELEASE)
@@ -606,7 +608,7 @@ static int message_handle_key_editmode(struct key_event * k)
 			status.flags |= CLIPPY_PASTE_SELECTION;
 		return 1;
 	} else if (k->mouse == MOUSE_CLICK) {
-		if (k->x >= 2 && k->x <= 77 && k->y >= 13 && k->y <= 47) {
+		if (k->x >= 2 && k->x <= VGAMEM_COLUMNS - 3 && k->y >= 13 && k->y <= VGAMEM_ROWS - 3) {
 			new_cursor_line = (k->y - 13) + top_line;
 			new_cursor_char = (k->x - 2);
 			if (k->sx != k->x || k->sy != k->y) {
@@ -656,14 +658,14 @@ static int message_handle_key_editmode(struct key_event * k)
 			return 0;
 		if (k->state == KEY_RELEASE)
 			return 1;
-		new_cursor_line -= 35;
+		new_cursor_line -= VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_PAGEDOWN:
 		if (!NO_MODIFIER(k->mod))
 			return 0;
 		if (k->state == KEY_RELEASE)
 			return 1;
-		new_cursor_line += 35;
+		new_cursor_line += VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_HOME:
 		if (k->state == KEY_RELEASE)
@@ -837,7 +839,7 @@ static int message_handle_key_editmode(struct key_event * k)
 
 static void message_draw_const(void)
 {
-	draw_box(1, 12, 78, 48, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(1, 12, VGAMEM_COLUMNS - 2, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
 }
 
 static void song_changed_cb(void)

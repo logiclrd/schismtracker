@@ -235,6 +235,7 @@ void menu_show(void)
 {
 	dialog_destroy_all();
 	status.dialog_type = DIALOG_MAIN_MENU;
+	status.dialog = NULL;
 	current_menu[0] = &main_menu;
 
 	status.flags |= NEED_UPDATE;
@@ -245,6 +246,7 @@ void menu_hide(void)
 	ENSURE_MENU(return);
 
 	status.dialog_type = DIALOG_NONE;
+	status.dialog = NULL;
 
 	/* "unpress" the menu items */
 	current_menu[0]->active_item = -1;

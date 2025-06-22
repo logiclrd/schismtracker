@@ -53,6 +53,8 @@ struct log_line {
 static struct widget widgets_log[1];
 
 #define NUM_LINES 1000
+#define VISIBLE_LINES (VGAMEM_ROWS - 18)
+
 static struct log_line lines[NUM_LINES];
 static int top_line = 0;
 static int last_line = -1;
@@ -61,8 +63,8 @@ static int last_line = -1;
 
 static void log_draw_const(void)
 {
-	draw_box(1, 12, 78, 48, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_fill_chars(2, 13, 77, 47, DEFAULT_FG, 0);
+	draw_box(1, 12, VGAMEM_COLUMNS - 2, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(2, 13, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 3, DEFAULT_FG, 0);
 }
 
 static int log_handle_key(struct key_event * k)
@@ -76,7 +78,7 @@ static int log_handle_key(struct key_event * k)
 	case SCHISM_KEYSYM_PAGEUP:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		top_line -= 15;
+		top_line -= (VGAMEM_ROWS - 35);
 		break;
 	case SCHISM_KEYSYM_DOWN:
 		if (k->state == KEY_RELEASE)
@@ -86,7 +88,7 @@ static int log_handle_key(struct key_event * k)
 	case SCHISM_KEYSYM_PAGEDOWN:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		top_line += 15;
+		top_line += (VGAMEM_ROWS - 35);
 		break;
 	case SCHISM_KEYSYM_HOME:
 		if (k->state == KEY_RELEASE)
@@ -111,7 +113,7 @@ static int log_handle_key(struct key_event * k)
 
 		return 0;
 	};
-	top_line = CLAMP(top_line, 0, (last_line-32));
+	top_line = CLAMP(top_line, 0, (last_line-VISIBLE_LINES));
 	if (top_line < 0)
 		top_line = 0;
 	status.flags |= NEED_UPDATE;
@@ -123,11 +125,11 @@ static void log_redraw(void)
 	int n, i;
 
 	i = top_line;
-	for (n = 0; i <= last_line && n < 33; n++, i++) {
+	for (n = 0; i <= last_line && n < VISIBLE_LINES; n++, i++) {
 		if (!lines[i].text)
 			continue;
 
-		draw_text_charset_len(lines[i].text, lines[i].set, 74, 3, 14 + n,
+		draw_text_charset_len(lines[i].text, lines[i].set, VGAMEM_COLUMNS - 6, 3, 14 + n,
 			lines[i].color, 0);
 	}
 }
@@ -172,7 +174,7 @@ void log_append3(charset_t set, int color, int must_free, const char *text)
 		lines[last_line].color     = color;
 		lines[last_line].must_free = must_free;
 
-		top_line = CLAMP(last_line - 32, 0, NUM_LINES - 32);
+		top_line = CLAMP(last_line - VISIBLE_LINES, 0, NUM_LINES - VISIBLE_LINES);
 
 		if (status.current_page == PAGE_LOG)
 			status.flags |= NEED_UPDATE;

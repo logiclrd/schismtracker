@@ -31,6 +31,13 @@ struct dialog {
 	int type;
 	int x, y, w, h;
 
+	/* all dialog code assumes the screen area is 80x50 -- if the
+	 * build specifies a greater resolution, then we shift drawing
+	 * and mouse events to transparently compensate and keep the
+	 * dialog centred
+	 */
+	int dx, dy;
+
 	/* next two are for "simple" dialogs (type != DIALOG_CUSTOM) */
 	char *text;     /* malloc'ed */
 	int text_x;

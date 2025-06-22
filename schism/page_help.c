@@ -96,7 +96,7 @@ extern const char *help_text[];
 
 static void help_draw_const(void)
 {
-	draw_box(1, 12, 78, 45, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_box(1, 12, VGAMEM_COLUMNS - 2, VGAMEM_ROWS - 5, BOX_THICK | BOX_INNER | BOX_INSET);
 
 	if (status.dialog_type == DIALOG_NONE) widget_change_focus_to(1);
 }
@@ -109,10 +109,10 @@ static void help_redraw(void)
 	const uint8_t graphic_chars[] = {0, 0x89, 0x8f, 0x96, 0x84, 0, 0x91, 0x8b, 0x86, 0x8a};
 	char ch;
 
-	draw_fill_chars(2, 13, 77, 44, DEFAULT_FG, 0);
+	draw_fill_chars(2, 13, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 6, DEFAULT_FG, 0);
 
 	ptr = lines + top_line;
-	for (pos = 13, n = top_line; pos < (VGAMEM_ROWS - 5); pos++, n++) {
+	for (pos = 13, n = top_line; pos < (VGAMEM_ROWS - 5) && *ptr; pos++, n++) {
 		switch (**ptr) {
 		default:
 			lp = strcspn(*ptr+1, "\015\012");
@@ -147,6 +147,8 @@ static void _help_close(void)
 	set_page(status.previous_page);
 }
 
+#define VISIBLE_LINES (VGAMEM_ROWS - 18)
+
 static int help_handle_key(struct key_event * k)
 {
 	int new_line = top_line;
@@ -180,12 +182,12 @@ static int help_handle_key(struct key_event * k)
 	case SCHISM_KEYSYM_PAGEUP:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		new_line -= 32;
+		new_line -= VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_PAGEDOWN:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		new_line += 32;
+		new_line += VISIBLE_LINES;
 		break;
 	case SCHISM_KEYSYM_HOME:
 		if (k->state == KEY_RELEASE)
@@ -195,7 +197,7 @@ static int help_handle_key(struct key_event * k)
 	case SCHISM_KEYSYM_END:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		new_line = num_lines - 32;
+		new_line = num_lines - VISIBLE_LINES;
 		break;
 	default:
 		if (k->mouse != MOUSE_NONE) {
@@ -206,7 +208,7 @@ static int help_handle_key(struct key_event * k)
 		}
 	}
 
-	new_line = CLAMP(new_line, 0, num_lines - 32);
+	new_line = CLAMP(new_line, 0, num_lines - VISIBLE_LINES);
 	if (new_line != top_line) {
 		top_line = new_line;
 		help_text_lastpos[status.current_help_index] = top_line;

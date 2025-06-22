@@ -61,9 +61,15 @@ struct info_window_type {
 	to the height to get the number of channels, so it should be NEGATIVE. (example: the sample name
 	view uses the first position for the top of the box and the last position for the bottom, so it
 	uses -2.) confusing, almost to the point of being painful, but it works. (ok, i admit, it's not
-	the most brilliant idea i ever had ;) */
+	the most brilliant idea i ever had ;)
+
+	if the bit CHANNELS_FIT is set, then the value & ~CHANNELS_FIT is the number of characters each
+	channel will occupy, from which an actual number of channels can be calculated
+	*/
 	int channels;
 };
+
+#define CHANNELS_FIT 0x10000
 
 struct info_window {
 	int type;
@@ -75,12 +81,12 @@ static int selected_window = 0;
 static int num_windows = 3;
 static int selected_channel = 1;
 
-/* five, because that's Impulse Tracker's maximum */
-#define MAX_WINDOWS 5
+/* five is Impulse Tracker's maximum */
+#define MAX_WINDOWS 15
 static struct info_window windows[MAX_WINDOWS] = {
 	{0, 19, 1},     /* samples (18 channels displayed) */
 	{8, 3, 1},      /* active channels */
-	{5, 15, 1},     /* 24chn track view */
+	{5, VGAMEM_ROWS - 35, 1},     /* 24chn track view */
 };
 
 /* --------------------------------------------------------------------- */
@@ -509,28 +515,36 @@ static void _draw_track_view(int base, int height, int first_channel, int num_ch
 	}
 }
 
-static void info_draw_track_5(int base, int height, int active, int first_channel)
+#define AVAILABLE_WIDTH (VGAMEM_COLUMNS - 8)
+
+static void info_draw_track_13_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 
-	draw_box(4, base, 74, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 5; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 14)
+
+	draw_box(4, base, 4 + NUM_CHANNELS * 14, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
 			fg = (chan == selected_channel ? 3 : (active ? 2 : 0));
 		draw_channel_header_13(chan, 5 + 14 * chan_pos, base, fg);
 	}
-	_draw_track_view(base, height, first_channel, 5, 13, 1, draw_note_13);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 13, 1, draw_note_13);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_8(int base, int height, int active, int first_channel)
+static void info_draw_track_8_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 76, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 8; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 9)
+
+	draw_box(4, base, 4 + NUM_CHANNELS * 9, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
@@ -541,16 +555,20 @@ static void info_draw_track_8(int base, int height, int active, int first_channe
 		draw_char(0, 6 + 9 * chan_pos + 4, base, 1, 1);
 		draw_char(0, 6 + 9 * chan_pos + 5, base, 1, 1);
 	}
-	_draw_track_view(base, height, first_channel, 8, 8, 1, draw_note_8);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 8, 1, draw_note_8);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_10(int base, int height, int active, int first_channel)
+static void info_draw_track_7_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 75, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 10; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 7)
+
+	draw_box(4, base, 5 + NUM_CHANNELS * 7, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
@@ -561,16 +579,20 @@ static void info_draw_track_10(int base, int height, int active, int first_chann
 		draw_char(0, 5 + 7 * chan_pos + 4, base, 1, 1);
 		draw_char(0, 5 + 7 * chan_pos + 5, base, 1, 1);
 	}
-	_draw_track_view(base, height, first_channel, 10, 7, 0, draw_note_7);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 7, 0, draw_note_7);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_12(int base, int height, int active, int first_channel)
+static void info_draw_track_6_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 77, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 12; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 6)
+
+	draw_box(4, base, 5 + NUM_CHANNELS * 6, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
@@ -581,58 +603,72 @@ static void info_draw_track_12(int base, int height, int active, int first_chann
 		draw_char(0, 5 + 6 * chan_pos + 4, base, 1, 1);
 		/* draw_char(0, 5 + 6 * chan_pos + 5, base, 1, 1); */
 	}
-	_draw_track_view(base, height, first_channel, 12, 6, 0, draw_note_6);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 6, 0, draw_note_6);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_18(int base, int height, int active, int first_channel)
+static void info_draw_track_4_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 76, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 18; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 4)
+
+	draw_box(4, base, 4 + 4 * NUM_CHANNELS, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
 			fg = (chan == selected_channel ? 3 : (active ? 2 : 0));
 		draw_text(str_from_num(2, chan, buf), 5 + 4 * chan_pos + 1, base, fg, 1);
 	}
-	_draw_track_view(base, height, first_channel, 18, 3, 1, draw_note_3);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 3, 1, draw_note_3);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_24(int base, int height, int active, int first_channel)
+static void info_draw_track_3_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 77, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 24; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 3)
+
+	draw_box(4, base, 5 + 3 * NUM_CHANNELS, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
 			fg = (chan == selected_channel ? 3 : (active ? 2 : 0));
 		draw_text(str_from_num(2, chan, buf), 5 + 3 * chan_pos + 1, base, fg, 1);
 	}
-	_draw_track_view(base, height, first_channel, 24, 3, 0, draw_note_3);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 3, 0, draw_note_3);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_36(int base, int height, int active, int first_channel)
+static void info_draw_track_2_chars(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	char buf[11];
 
-	draw_box(4, base, 77, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
-	for (chan = first_channel, chan_pos = 0; chan_pos < 36; chan++, chan_pos++) {
+	#define NUM_CHANNELS (AVAILABLE_WIDTH / 2)
+
+	draw_box(4, base, 5 + 2 * NUM_CHANNELS, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	for (chan = first_channel, chan_pos = 0; (chan < MAX_CHANNELS) && (chan_pos < NUM_CHANNELS); chan++, chan_pos++) {
 		if (current_song->channels[chan - 1].flags & CHN_MUTE)
 			fg = (chan == selected_channel ? 6 : 1);
 		else
 			fg = (chan == selected_channel ? 3 : (active ? 2 : 0));
 		draw_text(str_from_num(2, chan, buf), 5 + 2 * chan_pos, base, fg, 1);
 	}
-	_draw_track_view(base, height, first_channel, 36, 2, 0, draw_note_2);
+	_draw_track_view(base, height, first_channel, NUM_CHANNELS, 2, 0, draw_note_2);
+
+	#undef NUM_CHANNELS
 }
 
-static void info_draw_track_64(int base, int height, int active, int first_channel)
+static void info_draw_track_64_channels(int base, int height, int active, int first_channel)
 {
 	int chan, chan_pos, fg;
 	/* IT draws nine more blank "channels" on the right */
@@ -678,8 +714,8 @@ static void info_draw_note_dots(int base, int height, int active, int first_chan
 	uint8_t d, dn;
 	uint8_t dot_field[73][36] = { {0} }; // f#2 -> f#8 = 73 columns
 
-	draw_fill_chars(5, base + 1, 77, base + height - 2, DEFAULT_FG, 0);
-	draw_box(4, base, 78, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(5, base + 1, VGAMEM_COLUMNS - 3, base + height - 2, DEFAULT_FG, 0);
+	draw_box(4, base, VGAMEM_COLUMNS - 2, base + height - 1, BOX_THICK | BOX_INNER | BOX_INSET);
 
 	for (n = 0; n < MAX_VOICES; n++) {
 		voice = current_song->voices + n;
@@ -710,7 +746,7 @@ static void info_draw_note_dots(int base, int height, int active, int first_chan
 	}
 
 	for (c = first_channel, pos = 0; pos < height - 2; pos++, c++) {
-		for (n = 0; n < (VGAMEM_COLUMNS - 7); n++) {
+		for (n = 0; n < 73; n++) {
 			d = dot_field[n][pos] ? dot_field[n][pos] : 0x06;
 
 			fg = d & 0xf;
@@ -793,17 +829,17 @@ static void click_chn_nil(SCHISM_UNUSED int x, SCHISM_UNUSED int y, SCHISM_UNUSE
 /* --------------------------------------------------------------------- */
 /* declarations of the window types */
 
-#define TRACK_VIEW(n) {"track" # n, info_draw_track_##n, click_chn_is_x, 1, n}
+#define TRACK_VIEW(n, m, f) {"track" # n, info_draw_track_##m, click_chn_is_x, 1, (f ? CHANNELS_FIT | f : n)}
 static const struct info_window_type window_types[] = {
 	{"samples", info_draw_samples, click_chn_is_y_nohead, 0, -2},
-	TRACK_VIEW(5),
-	TRACK_VIEW(8),
-	TRACK_VIEW(10),
-	TRACK_VIEW(12),
-	TRACK_VIEW(18),
-	TRACK_VIEW(24),
-	TRACK_VIEW(36),
-	TRACK_VIEW(64),
+	TRACK_VIEW(5, 13_chars, 14),
+	TRACK_VIEW(8, 8_chars, 9),
+	TRACK_VIEW(10, 7_chars, 7),
+	TRACK_VIEW(12, 6_chars, 6),
+	TRACK_VIEW(18, 4_chars, 4),
+	TRACK_VIEW(24, 3_chars, 3),
+	TRACK_VIEW(36, 2_chars, 2),
+	TRACK_VIEW(64, 64_channels, 0),
 	{"global", info_draw_channels, click_chn_nil, 1, 0},
 	{"dots", info_draw_note_dots, click_chn_is_y_nohead, 0, -2},
 	{"tech", info_draw_technical, click_chn_is_y, 1, -2},
@@ -829,11 +865,20 @@ static void _fix_channels(int n)
 			channels++;
 		}
 	}
+
+	if (channels & CHANNELS_FIT) {
+		int chars_per_channel = channels & ~CHANNELS_FIT;
+
+		channels = AVAILABLE_WIDTH / chars_per_channel;
+	}
+
 	if (selected_channel < w->first_channel)
 		w->first_channel = selected_channel;
 	else if (selected_channel >= (w->first_channel + channels))
 		w->first_channel = selected_channel - channels + 1;
-	w->first_channel = CLAMP(w->first_channel, 1, MAX_CHANNELS - channels + 1);
+
+	if (channels < MAX_CHANNELS)
+		w->first_channel = CLAMP(w->first_channel, 1, MAX_CHANNELS - channels + 1);
 }
 
 static int info_handle_click(int x, int y)
@@ -863,13 +908,13 @@ static void recalculate_windows(void)
 	for (n = 0; n < num_windows - 1; n++) {
 		_fix_channels(n);
 		pos += windows[n].height;
-		if (pos > 50) {
+		if (pos > VGAMEM_ROWS) {
 			/* Too big? Throw out the rest of the windows. */
 			num_windows = n;
 		}
 	}
 	SCHISM_RUNTIME_ASSERT(num_windows > 0, "Should always have at least one window.");
-	windows[n].height = 50 - pos;
+	windows[n].height = VGAMEM_ROWS - pos;
 	_fix_channels(n);
 }
 
@@ -1015,7 +1060,7 @@ static void info_page_redraw(void)
 		pos += height;
 	}
 	/* the last window takes up all the rest of the screen */
-	window_types[windows[n].type].draw(pos, 50 - pos, (n == selected_window), windows[n].first_channel);
+	window_types[windows[n].type].draw(pos, VGAMEM_ROWS - pos, (n == selected_window), windows[n].first_channel);
 }
 
 /* --------------------------------------------------------------------- */

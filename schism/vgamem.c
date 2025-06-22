@@ -139,6 +139,16 @@ static inline SCHISM_ALWAYS_INLINE int vgamem_unpack_halfw(int c)
 
 /* ------------------------------------------------------------------------ */
 
+static int draw_offset_x, draw_offset_y;
+
+void draw_offset(int dx, int dy)
+{
+	draw_offset_x = dx;
+	draw_offset_y = dy;
+}
+
+/* ------------------------------------------------------------------------ */
+
 #define VGAMEM_CHAR_COUNT (VGAMEM_COLUMNS * VGAMEM_ROWS)
 
 static uint32_t vgamem[VGAMEM_CHAR_COUNT] = {0};
@@ -173,19 +183,26 @@ void vgamem_ovl_alloc(struct vgamem_overlay *n)
 	n->skip = (NATIVE_SCREEN_WIDTH - n->width);
 }
 
+static int overlay_offset;
+
 void vgamem_ovl_apply(struct vgamem_overlay *n)
 {
 	unsigned int x, y;
 
+	overlay_offset = draw_offset_x * 8 + draw_offset_y * 8 * NATIVE_SCREEN_WIDTH;
+
+	int o = draw_offset_x + draw_offset_y * VGAMEM_COLUMNS;
+
 	for (y = n->y1; y <= n->y2; y++)
 		for (x = n->x1; x <= n->x2; x++)
-			vgamem[x + (y*VGAMEM_COLUMNS)] = VGAMEM_FONT_OVERLAY;
+			vgamem[o + x + (y*VGAMEM_COLUMNS)] = VGAMEM_FONT_OVERLAY;
 }
 
 void vgamem_ovl_clear(struct vgamem_overlay *n, int color)
 {
 	int i, j;
-	unsigned char *q = n->q;
+	unsigned int o = draw_offset_x + draw_offset_y * VGAMEM_COLUMNS;
+	unsigned char *q = n->q + o;
 	for (j = 0; j < n->height; j++) {
 		for (i = 0; i < n->width; i++) {
 			*q = color;
@@ -203,7 +220,9 @@ void vgamem_ovl_drawpixel(struct vgamem_overlay *n, int x, int y, int color)
 static inline void _draw_line_v(struct vgamem_overlay *n, int x,
 	int ys, int ye, int color)
 {
-	unsigned char *q = n->q + x;
+	int o = draw_offset_x * 8 + draw_offset_y * NATIVE_SCREEN_WIDTH;
+
+	unsigned char *q = n->q + x + o;
 	int y;
 
 	if (ys < ye) {
@@ -224,7 +243,9 @@ static inline void _draw_line_v(struct vgamem_overlay *n, int x,
 static inline void _draw_line_h(struct vgamem_overlay *n, int xs,
 	int xe, int y, int color)
 {
-	unsigned char *q = n->q + (y * NATIVE_SCREEN_WIDTH);
+	int o = draw_offset_x * 8 + draw_offset_y * NATIVE_SCREEN_WIDTH;
+
+	unsigned char *q = n->q + (y * NATIVE_SCREEN_WIDTH) + o;
 	int x;
 	if (xs < xe) {
 		q += xs;
@@ -332,7 +353,7 @@ static const uint8_t uFFFD[] = {
 	{ \
 		/* constants */ \
 		const uint_fast32_t y = (ry >> 3), yl = (ry & 7); \
-		const uint8_t *q = ovl + (ry * NATIVE_SCREEN_WIDTH); \
+		const uint8_t *q = ovl + (ry * NATIVE_SCREEN_WIDTH) - overlay_offset; \
 		const uint8_t *const itf = font_data + yl, \
 			*const bios = font_default_upper_alt + yl, \
 			*const bioslow = font_default_lower + yl, \
@@ -448,6 +469,9 @@ VGAMEM_SCANNER_VARIANT(32)
 
 void draw_char_unicode(uint32_t c, int x, int y, uint32_t fg, uint32_t bg)
 {
+	x += draw_offset_x;
+	y += draw_offset_y;
+
 	SCHISM_RUNTIME_ASSERT(x >= 0 && y >= 0 && x < VGAMEM_COLUMNS && y < VGAMEM_ROWS, "Coordinates should always be inbounds");
 
 	vgamem[x + (y*VGAMEM_COLUMNS)] = (VGAMEM_FONT_UNICODE
@@ -458,6 +482,9 @@ void draw_char_unicode(uint32_t c, int x, int y, uint32_t fg, uint32_t bg)
 
 void draw_char_bios(uint8_t c, int x, int y, uint32_t fg, uint32_t bg)
 {
+	x += draw_offset_x;
+	y += draw_offset_y;
+
 	SCHISM_RUNTIME_ASSERT(x >= 0 && y >= 0 && x < VGAMEM_COLUMNS && y < VGAMEM_ROWS, "Coordinates should always be inbounds");
 
 	vgamem[x + (y*VGAMEM_COLUMNS)] = (VGAMEM_FONT_BIOS
@@ -468,6 +495,9 @@ void draw_char_bios(uint8_t c, int x, int y, uint32_t fg, uint32_t bg)
 
 void draw_char(uint8_t c, int x, int y, uint32_t fg, uint32_t bg)
 {
+	x += draw_offset_x;
+	y += draw_offset_y;
+
 	SCHISM_RUNTIME_ASSERT(x >= 0 && y >= 0 && x < VGAMEM_COLUMNS && y < VGAMEM_ROWS, "Coordinates should always be inbounds");
 
 	vgamem[x + (y*VGAMEM_COLUMNS)] = ((fg << VGAMEM_FG_BIT) | (bg << VGAMEM_BG_BIT) | c);
@@ -530,6 +560,12 @@ int draw_text_utf8(const char * text, int x, int y, uint32_t fg, uint32_t bg)
 
 void draw_fill_chars(int xs, int ys, int xe, int ye, uint32_t fg, uint32_t bg)
 {
+	xs += draw_offset_x;
+	ys += draw_offset_y;
+
+	xe += draw_offset_x;
+	ye += draw_offset_y;
+
 	uint32_t *mm;
 	int x, len;
 
@@ -605,8 +641,10 @@ int draw_text_utf8_len(const char * text, int len, int x, int y, uint32_t fg, ui
 void draw_half_width_chars(uint8_t c1, uint8_t c2, int x, int y,
 			   uint32_t fg1, uint32_t bg1, uint32_t fg2, uint32_t bg2)
 {
-	SCHISM_RUNTIME_ASSERT(x >= 0 && y >= 0 && x < VGAMEM_COLUMNS && y < VGAMEM_ROWS, "Coordinates should always be inbounds");
+	x += draw_offset_x;
+	y += draw_offset_y;
 
+	SCHISM_RUNTIME_ASSERT(x >= 0 && y >= 0 && x < VGAMEM_COLUMNS && y < VGAMEM_ROWS, "Coordinates should always be inbounds");
 
 	vgamem[x + (y*VGAMEM_COLUMNS)] = (VGAMEM_FONT_HALFWIDTH
 		| (fg1 << VGAMEM_HW_FG1_BIT)

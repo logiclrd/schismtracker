@@ -29,7 +29,7 @@
 #include "widget.h"
 #include "vgamem.h"
 
-#define SCOPE_ROWS      32
+#define SCOPE_ROWS      (VGAMEM_ROWS - 18)
 
 /* This value is used internally to scale the power output of the FFT to decibels. */
 static const float fft_inv_bufsize = 1.0f/(FFT_BUFFER_SIZE>>2);
@@ -47,7 +47,7 @@ static int mono = 0;
 static int noisefloor=72;
 
 /* get the _whole_ display */
-static struct vgamem_overlay ovl = { 0, 0, 79, 49, NULL, 0, 0, 0 };
+static struct vgamem_overlay ovl = { 0, 0, VGAMEM_COLUMNS - 1, VGAMEM_ROWS - 1, NULL, 0, 0, 0 };
 
 /* tables */
 static uint32_t bit_reverse[FFT_BUFFER_SIZE];
@@ -239,7 +239,7 @@ static inline SCHISM_ALWAYS_INLINE unsigned char *_dobits(unsigned char *q,
 /*x = screen.x, h = 0..128, c = colour */
 static inline SCHISM_ALWAYS_INLINE void _drawslice(int x, int h, int c)
 {
-	int y = ((h>>2) & (SCOPE_ROWS-1))+1;
+	int y = ((h>>2) % SCOPE_ROWS)+1;
 
 	vgamem_ovl_drawline(&ovl,
 		x, (NATIVE_SCREEN_HEIGHT-y),

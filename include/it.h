@@ -147,6 +147,7 @@ struct tracker_status {
 	int previous_page;
 	int current_help_index;
 	int dialog_type;        /* one of the DIALOG_* constants above */
+	struct dialog *dialog;
 	int flags;
 	enum tracker_time_display time_display;
 	enum tracker_vis_style vis_style;

@@ -50,6 +50,7 @@ struct tracker_status status = {
 	.previous_page = PAGE_BLANK,
 	.current_help_index = HELP_GLOBAL,
 	.dialog_type = DIALOG_NONE,
+	.dialog = NULL,
 	.time_display = TIME_PLAY_ELAPSED,
 	.vis_style = VIS_VU_METER,
 	.last_midi_event = "",
@@ -169,14 +170,14 @@ static inline void draw_time(void)
 
 		const size_t buflen = strlen(buf);
 		if (buflen > 0) {
-			draw_text(buf, 69 + MIN(9, 9 - (ptrdiff_t)buflen), 9, 0, 2);
+			draw_text(buf, (VGAMEM_COLUMNS - 11) + MIN(9, 9 - (ptrdiff_t)buflen), 9, 0, 2);
 			return;
 		}
 	}
 
 	sprintf(buf, "%3d:%02d:%02d", current_time.h % 1000,
 		current_time.m % 60, current_time.s % 60);
-	draw_text(buf, 69, 9, 0, 2);
+	draw_text(buf, VGAMEM_COLUMNS - 11, 9, 0, 2);
 }
 
 /* --------------------------------------------------------------------- */
@@ -186,7 +187,7 @@ static void draw_page_title(void)
 	int x, tpos, tlen = strlen(ACTIVE_PAGE.title);
 
 	if (tlen > 0) {
-		tpos = 41 - ((tlen + 1) / 2);
+		tpos = (VGAMEM_COLUMNS / 2 + 1) - ((tlen + 1) / 2);
 
 		for (x = 1; x < tpos - 1; x++)
 			draw_char(154, x, 11, 1, 2);
@@ -383,12 +384,18 @@ static void minipop_slide(int cv, const char *name, int min, int max,
 	widget_create_thumbbar(_mpw, midx - 8, midy, 13, 0, 0, 0, _mp_change, min, max);
 	_mpw[0].d.thumbbar.value = CLAMP(cv, min, max);
 	_mpw[0].depressed = 1; /* maybe it just needs some zoloft? */
-	dialog_create_custom(midx - 10, midy - 3,  20, 6, _mpw, 1, 0, _mp_draw, NULL);
+
+	struct dialog *dlg = dialog_create_custom(midx - 10, midy - 3,  20, 6, _mpw, 1, 0, _mp_draw, NULL);
+
+	/* Undo centring compensation, since we're not centred. */
+	dlg->dx = 0;
+	dlg->dy = 0;
+
 	/* warp mouse to position of slider knob */
 	if (max == 0) max = 1; /* prevent division by zero */
 	video_warp_mouse(
 		video_width()*((midx - 8)*8 + (cv - min)*96.0/(max - min) + 1)/NATIVE_SCREEN_WIDTH,
-		video_height()*midy*8/400.0 + 4);
+		video_height()*midy*8/NATIVE_SCREEN_HEIGHT + 4);
 
 	_mp_active = 1;
 	status.flags |= NEED_UPDATE;
@@ -411,6 +418,8 @@ static int handle_key_global(struct key_event * k)
 {
 	int i, ins_mode;
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	if (_mp_active == 2 && (k->mouse == MOUSE_CLICK && k->state == KEY_RELEASE)) {
 		status.flags |= NEED_UPDATE;
 		dialog_destroy_all();
@@ -419,24 +428,24 @@ static int handle_key_global(struct key_event * k)
 		return 1;
 	}
 	if ((!_mp_active) && k->state == KEY_PRESS && k->mouse == MOUSE_CLICK) {
-		if (k->x >= 63 && k->x <= 77 && k->y >= 6 && k->y <= 7) {
+		if (k->x >= VGAMEM_COLUMNS - 17 && k->x <= VGAMEM_COLUMNS - 3 && k->y >= 6 && k->y <= 7) {
 			status.vis_style++;
 			status.vis_style %= VIS_SENTINEL;
 			status.flags |= NEED_UPDATE;
 			return 1;
-		} else if (k->y == 5 && k->x == 50) {
+		} else if (k->y == 5 && k->x == hx + 10) {
 			minipop_slide(kbd_get_current_octave(), "Octave", 0, 8,
-				kbd_set_current_octave, NULL, 50, 5);
+				kbd_set_current_octave, NULL, hx + 10, 5);
 			return 1;
-		} else if (k->y == 4 && k->x >= 50 && k->x <= 52) {
+		} else if (k->y == 4 && k->x >= hx + 10 && k->x <= hx + 12) {
 			minipop_slide(song_get_current_speed(), "Speed", 1, 255,
-				song_set_current_speed, song_set_initial_speed, 51, 4);
+				song_set_current_speed, song_set_initial_speed, hx + 11, 4);
 			return 1;
-		} else if (k->y == 4 && k->x >= 54 && k->x <= 56) {
+		} else if (k->y == 4 && k->x >= hx + 14 && k->x <= hx + 16) {
 			minipop_slide(song_get_current_tempo(), "Tempo", 32, 255,
-				song_set_current_tempo, song_set_initial_tempo, 55, 4);
+				song_set_current_tempo, song_set_initial_tempo, hx + 15, 4);
 			return 1;
-		} else if (k->y == 3 && k->x >= 50 && k-> x <= 77) {
+		} else if (k->y == 3 && k->x >= hx + 10 && k->x <= VGAMEM_COLUMNS - 3) {
 			if (page_is_instrument_list(status.current_page)
 			    || status.current_page == PAGE_SAMPLE_LIST
 			    || (!(status.flags & CLASSIC_MODE)
@@ -448,11 +457,11 @@ static int handle_key_global(struct key_event * k)
 			if (ins_mode) {
 				minipop_slide(instrument_get_current(), "Instrument",
 					status.current_page == PAGE_INSTRUMENT_LIST ? 1 : 0,
-					99 /* FIXME */, instrument_set, NULL, 58, 3);
+					99 /* FIXME */, instrument_set, NULL, hx + 18, 3);
 			} else {
 				minipop_slide(sample_get_current(), "Sample",
 					status.current_page == PAGE_SAMPLE_LIST ? 1 : 0,
-					99 /* FIXME */, sample_set, NULL, 58, 3);
+					99 /* FIXME */, sample_set, NULL, hx + 18, 3);
 			}
 
 		} else if (k->x >= 12 && k->x <= 18) {
@@ -1104,6 +1113,17 @@ void handle_key(struct key_event *k)
 	if (_handle_ime(k))
 		return;
 
+	/* Dialogs are laid out as though they are on an 80x50 buffer. If the buffer
+	 * isn't that size, then the elements will be shifted to keep them centred.
+	 * Mouse events need their coordinates shifted correspondingly.
+	 */
+	if (status.dialog && k->mouse) {
+		k->x -= status.dialog->dx;
+		k->y -= status.dialog->dy;
+		k->fx -= status.dialog->dx * 8;
+		k->fy -= status.dialog->dy * 8;
+	}
+
 	/* okay... */
 	if (!(status.flags & DISKWRITER_ACTIVE) && ACTIVE_PAGE.pre_handle_key) {
 		if (ACTIVE_PAGE.pre_handle_key(k)) return;
@@ -1218,50 +1238,52 @@ static void draw_top_info_const(void)
 	}
 
 	draw_text(schism_banner(status.flags & CLASSIC_MODE),
-		(80 - strlen(schism_banner(status.flags & CLASSIC_MODE))) / 2, 1, 0, 2);
+		(VGAMEM_COLUMNS - strlen(schism_banner(status.flags & CLASSIC_MODE))) / 2, 1, 0, 2);
 	draw_text("Song Name", 2, 3, 0, 2);
 	draw_text("File Name", 2, 4, 0, 2);
 	draw_text("Order", 6, 5, 0, 2);
 	draw_text("Pattern", 4, 6, 0, 2);
 	draw_text("Row", 8, 7, 0, 2);
 
-	draw_text("Speed/Tempo", 38, 4, 0, 2);
-	draw_text("Octave", 43, 5, 0, 2);
+	int hx = VGAMEM_COLUMNS / 2;
+
+	draw_text("Speed/Tempo", hx - 2, 4, 0, 2);
+	draw_text("Octave", hx + 3, 5, 0, 2);
 
 	draw_text("F1...Help       F9.....Load", 21, 6, 0, 2);
 	draw_text("ESC..Main Menu  F5/F8..Play / Stop", 21, 7, 0, 2);
 
 	/* the neat-looking (but incredibly ugly to draw) borders */
 	draw_char(128, 30, 4, br, 2);
-	draw_char(128, 57, 4, br, 2);
+	draw_char(128, hx + 17, 4, br, 2);
 	draw_char(128, 19, 5, br, 2);
-	draw_char(128, 51, 5, br, 2);
+	draw_char(128, hx + 11, 5, br, 2);
 	draw_char(129, 36, 4, br, 2);
-	draw_char(129, 50, 6, br, 2);
+	draw_char(129, hx + 10, 6, br, 2);
 	draw_char(129, 17, 8, br, 2);
 	draw_char(129, 18, 8, br, 2);
 	draw_char(131, 37, 3, br, 2);
-	draw_char(131, 78, 3, br, 2);
+	draw_char(131, hx + 38, 3, br, 2);
 	draw_char(131, 19, 6, br, 2);
 	draw_char(131, 19, 7, br, 2);
-	draw_char(132, 49, 3, tl, 2);
-	draw_char(132, 49, 4, tl, 2);
-	draw_char(132, 49, 5, tl, 2);
-	draw_char(134, 75, 2, tl, 2);
-	draw_char(134, 76, 2, tl, 2);
-	draw_char(134, 77, 2, tl, 2);
+	draw_char(132, hx + 9, 3, tl, 2);
+	draw_char(132, hx + 9, 4, tl, 2);
+	draw_char(132, hx + 9, 5, tl, 2);
+	draw_char(134, hx + 35, 2, tl, 2);
+	draw_char(134, hx + 36, 2, tl, 2);
+	draw_char(134, hx + 37, 2, tl, 2);
 	draw_char(136, 37, 4, br, 2);
-	draw_char(136, 78, 4, br, 2);
+	draw_char(136, hx + 38, 4, br, 2);
 	draw_char(136, 30, 5, br, 2);
-	draw_char(136, 57, 5, br, 2);
-	draw_char(136, 51, 6, br, 2);
+	draw_char(136, hx + 17, 5, br, 2);
+	draw_char(136, hx + 11, 6, br, 2);
 	draw_char(136, 19, 8, br, 2);
-	draw_char(137, 49, 6, br, 2);
+	draw_char(137, hx + 9, 6, br, 2);
 	draw_char(137, 11, 8, br, 2);
 	draw_char(138, 37, 2, tl, 2);
-	draw_char(138, 78, 2, tl, 2);
+	draw_char(138, hx + 38, 2, tl, 2);
 	draw_char(139, 11, 2, tl, 2);
-	draw_char(139, 49, 2, tl, 2);
+	draw_char(139, hx + 9, 2, tl, 2);
 
 	for (n = 0; n < 5; n++) {
 		draw_char(132, 11, 3 + n, tl, 2);
@@ -1270,29 +1292,29 @@ static void draw_top_info_const(void)
 		draw_char(129, 20 + n, 5, br, 2);
 		draw_char(129, 31 + n, 4, br, 2);
 		draw_char(134, 32 + n, 2, tl, 2);
-		draw_char(134, 50 + n, 2, tl, 2);
-		draw_char(129, 52 + n, 5, br, 2);
-		draw_char(129, 58 + n, 4, br, 2);
-		draw_char(134, 70 + n, 2, tl, 2);
+		draw_char(134, hx + 10 + n, 2, tl, 2);
+		draw_char(129, hx + 12 + n, 5, br, 2);
+		draw_char(129, hx + 18 + n, 4, br, 2);
+		draw_char(134, hx + 30 + n, 2, tl, 2);
 	}
 	for (; n < 10; n++) {
 		draw_char(134, 12 + n, 2, tl, 2);
 		draw_char(129, 20 + n, 5, br, 2);
-		draw_char(134, 50 + n, 2, tl, 2);
-		draw_char(129, 58 + n, 4, br, 2);
+		draw_char(134, hx + 10 + n, 2, tl, 2);
+		draw_char(129, hx + 18 + n, 4, br, 2);
 	}
 	for (; n < 20; n++) {
 		draw_char(134, 12 + n, 2, tl, 2);
-		draw_char(134, 50 + n, 2, tl, 2);
-		draw_char(129, 58 + n, 4, br, 2);
+		draw_char(134, hx + 10 + n, 2, tl, 2);
+		draw_char(129, hx + 18 + n, 4, br, 2);
 	}
 
-	draw_text("Time", 63, 9, 0, 2);
+	draw_text("Time", VGAMEM_COLUMNS - 17, 9, 0, 2);
 	draw_char('/', 15, 5, 1, 0);
 	draw_char('/', 15, 6, 1, 0);
 	draw_char('/', 15, 7, 1, 0);
-	draw_char('/', 53, 4, 1, 0);
-	draw_char(':', 52, 3, 7, 0);
+	draw_char('/', hx + 13, 4, 1, 0);
+	draw_char(':', hx + 12, 3, 7, 0);
 }
 
 /* --------------------------------------------------------------------- */
@@ -1314,30 +1336,34 @@ void update_current_instrument(void)
 	else
 		ins_mode = song_is_instrument_mode();
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	if (ins_mode) {
-		draw_text("Instrument", 39, 3, 0, 2);
+		draw_text("Instrument", hx - 1, 3, 0, 2);
 		n = instrument_get_current();
 		if (n > 0)
 			name = song_get_instrument(n)->name;
 	} else {
-		draw_text("    Sample", 39, 3, 0, 2);
+		draw_text("    Sample", hx - 1, 3, 0, 2);
 		n = sample_get_current();
 		if (n > 0)
 			name = song_get_sample(n)->name;
 	}
 
 	if (n > 0) {
-		draw_text(str_from_num99(n, buf), 50, 3, 5, 0);
-		draw_text_len(name, 25, 53, 3, 5, 0);
+		draw_text(str_from_num99(n, buf), hx + 10, 3, 5, 0);
+		draw_text_len(name, 25, hx + 13, 3, 5, 0);
 	} else {
-		draw_text("..", 50, 3, 5, 0);
-		draw_text(".........................", 53, 3, 5, 0);
+		draw_text("..", hx + 10, 3, 5, 0);
+		draw_text(".........................", hx + 13, 3, 5, 0);
 	}
 }
 
 static void redraw_top_info(void)
 {
 	char buf[11];
+
+	int hx = VGAMEM_COLUMNS / 2;
 
 	update_current_instrument();
 
@@ -1351,20 +1377,22 @@ static void redraw_top_info(void)
 	update_current_pattern();
 	update_current_row();
 
-	draw_text(str_from_num(3, song_get_current_speed(), buf), 50, 4, 5, 0);
-	draw_text(str_from_num(3, song_get_current_tempo(), buf), 54, 4, 5, 0);
-	draw_char('0' + kbd_get_current_octave(), 50, 5, 5, 0);
+	draw_text(str_from_num(3, song_get_current_speed(), buf), hx + 10, 4, 5, 0);
+	draw_text(str_from_num(3, song_get_current_tempo(), buf), hx + 14, 4, 5, 0);
+	draw_char('0' + kbd_get_current_octave(), hx + 10, 5, 5, 0);
 }
 
 static void _draw_vis_box(void)
 {
-	draw_box(62, 5, 78, 8, BOX_THIN | BOX_INNER | BOX_INSET);
-	draw_fill_chars(63, 6, 77, 7, DEFAULT_FG, 0);
+	int hx = VGAMEM_COLUMNS / 2;
+
+	draw_box(hx + 22, 5, VGAMEM_COLUMNS - 2, 8, BOX_THIN | BOX_INNER | BOX_INSET);
+	draw_fill_chars(hx + 23, 6, VGAMEM_COLUMNS - 3, 7, DEFAULT_FG, 0);
 }
 
 static int _vis_virgin = 1;
 static struct vgamem_overlay vis_overlay = {
-	63, 6, 77, 7,
+	VGAMEM_COLUMNS / 2 + 23, 6, VGAMEM_COLUMNS - 3, 7,
 	NULL, 0, 0, 0,
 };
 
@@ -1373,8 +1401,9 @@ static void vis_fft(void)
 	int i;
 	int32_t y;
 
-	/*this is the size of vis_overlay.width*/
-	unsigned char outfft[120];
+	#define VIS_OVERLAY_WIDTH ((VGAMEM_COLUMNS - 3) - (VGAMEM_COLUMNS / 2 + 23) + 1) * 8
+
+	unsigned char outfft[VIS_OVERLAY_WIDTH];
 
 	if (_vis_virgin) {
 		vgamem_ovl_alloc(&vis_overlay);
@@ -1384,8 +1413,8 @@ static void vis_fft(void)
 	song_lock_audio();
 
 	vgamem_ovl_clear(&vis_overlay,0);
-	fft_get_columns(120, outfft, 0);
-	for (i = 0; i < 120; i++) {
+	fft_get_columns(VIS_OVERLAY_WIDTH, outfft, 0);
+	for (i = 0; i < VIS_OVERLAY_WIDTH; i++) {
 		y = outfft[i];
 		/* reduce range */
 		y = rshift_signed(y, 3);
@@ -1435,9 +1464,11 @@ static void vis_vu_meter(void)
 	left >>= 1;
 	right >>= 1;
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	_draw_vis_box();
-	draw_vu_meter(63, 6, 15, left, 5, 4);
-	draw_vu_meter(63, 7, 15, right, 5, 4);
+	draw_vu_meter(hx + 23, 6, 15, left, 5, 4);
+	draw_vu_meter(hx + 23, 7, 15, right, 5, 4);
 }
 
 static void vis_fakemem(void)
@@ -1445,6 +1476,8 @@ static void vis_fakemem(void)
 	char buf[32];
 	unsigned int conv;
 	unsigned int ems;
+
+	int hx = VGAMEM_COLUMNS / 2;
 
 	if (status.flags & CLASSIC_MODE) {
 		ems = memused_ems();
@@ -1459,18 +1492,18 @@ static void vis_fakemem(void)
 		ems >>= 10;
 
 		sprintf(buf, "FreeMem %uk", conv);
-		draw_text(buf, 63, 6, 0, 2);
+		draw_text(buf, hx + 23, 6, 0, 2);
 		sprintf(buf, "FreeEMS %uk", ems);
-		draw_text(buf, 63, 7, 0, 2);
+		draw_text(buf, hx + 23, 7, 0, 2);
 	} else {
 		sprintf(buf, "   Song %uk",
 				(unsigned)(
 					(memused_patterns()
 					 +memused_instruments()
 					 +memused_songmessage()) >> 10));
-		draw_text(buf, 63, 6, 0, 2);
+		draw_text(buf, hx + 23, 6, 0, 2);
 		sprintf(buf, "Samples %uk", (unsigned)(memused_samples() >> 10));
-		draw_text(buf, 63, 7, 0, 2);
+		draw_text(buf, hx + 23, 7, 0, 2);
 	}
 }
 
@@ -1508,11 +1541,11 @@ void redraw_screen(void)
 	char buf[11];
 
 	if (!ACTIVE_PAGE.draw_full) {
-		draw_fill_chars(0,0,79,49, DEFAULT_FG,2);
+		draw_fill_chars(0,0,VGAMEM_COLUMNS-1,VGAMEM_ROWS-1, DEFAULT_FG,2);
 
 		/* border around the whole screen */
 		draw_char(128, 0, 0, 3, 2);
-		for (n = 79; n > 49; n--)
+		for (n = VGAMEM_COLUMNS - 1; n > VGAMEM_COLUMNS/2 + 9; n--)
 			draw_char(129, n, 0, 3, 2);
 		do {
 			draw_char(129, n, 0, 3, 2);
@@ -1524,10 +1557,12 @@ void redraw_screen(void)
 	}
 
 	if (!ACTIVE_PAGE.draw_full) {
+		int hx = VGAMEM_COLUMNS / 2;
+
 		draw_vis();
 		draw_time();
-		draw_text(str_from_num(3, song_get_current_speed(), buf), 50, 4, 5, 0);
-		draw_text(str_from_num(3, song_get_current_tempo(), buf), 54, 4, 5, 0);
+		draw_text(str_from_num(3, song_get_current_speed(), buf), hx + 10, 4, 5, 0);
+		draw_text(str_from_num(3, song_get_current_tempo(), buf), hx + 14, 4, 5, 0);
 
 		status_text_redraw();
 	}

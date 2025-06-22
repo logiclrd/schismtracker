@@ -56,6 +56,8 @@
 
 #define SONG_PLAYING (song_get_mode() & (MODE_PLAYING|MODE_PATTERN_LOOP))
 
+#define VISIBLE_LINES (VGAMEM_ROWS - 18)
+
 /* this is actually used by pattern-view.c */
 int show_default_volumes = 0;
 
@@ -2477,20 +2479,20 @@ static void pattern_editor_reposition(void)
 		top_display_channel = current_channel - visible_channels + 1;
 
 	if (centralise_cursor) {
-		if (current_row <= 16)
+		if (current_row <= (VISIBLE_LINES / 2))
 			top_display_row = 0;
-		else if (current_row + 15 > max_row_number)
-			top_display_row = max_row_number - 31;
+		else if (current_row + (VISIBLE_LINES / 2 - 1) > max_row_number)
+			top_display_row = max_row_number - (VISIBLE_LINES - 1);
 		else
-			top_display_row = current_row - 16;
+			top_display_row = current_row - (VISIBLE_LINES / 2);
 	} else {
 		/* This could be written better. */
 		if (current_row < top_display_row)
 			top_display_row = current_row;
-		else if (current_row > top_display_row + 31)
-			top_display_row = current_row - 31;
-		if (top_display_row + 31 > max_row_number)
-			top_display_row = max_row_number - 31;
+		else if (current_row > top_display_row + VISIBLE_LINES - 1)
+			top_display_row = current_row - (VISIBLE_LINES - 1);
+		if (top_display_row + (VISIBLE_LINES - 1) > max_row_number)
+			top_display_row = max_row_number - (VISIBLE_LINES - 1);
 	}
 	if (top_display_row < 0)
 		top_display_row = 0;
@@ -2690,7 +2692,7 @@ static void recalculate_visible_area(void)
 		}
 		new_width = visible_width + track_views[track_view_scheme[n]].width;
 
-		if (new_width > 72)
+		if (new_width > VGAMEM_COLUMNS - 8)
 			break;
 		visible_width = new_width;
 		if (draw_divisions)
@@ -2756,7 +2758,7 @@ static void pattern_editor_redraw(void)
 						((song_get_channel(chan - 1)->flags & CHN_MUTE) ? 0 : 3));
 
 		note = pattern + MAX_CHANNELS * top_display_row + chan - 1;
-		for (row = top_display_row, row_pos = 0; row_pos < 32 && row < total_rows; row++, row_pos++) {
+		for (row = top_display_row, row_pos = 0; row_pos < VISIBLE_LINES && row < total_rows; row++, row_pos++) {
 			if (chan_pos == 0) {
 				fg = pattern_is_playing && row == playing_row ? 3 : 0;
 				bg = (current_pattern == marked_pattern && row == marked_row) ? 11 : 2;
@@ -2814,7 +2816,7 @@ static void pattern_editor_redraw(void)
 			note += MAX_CHANNELS;
 		}
 		// hmm...?
-		for (; row_pos < 32; row++, row_pos++) {
+		for (; row_pos < VISIBLE_LINES; row++, row_pos++) {
 			if (ROW_IS_MAJOR(row))
 				bg = 14;
 			else if (ROW_IS_MINOR(row))
@@ -2827,18 +2829,18 @@ static void pattern_editor_redraw(void)
 			}
 		}
 		if (chan == current_channel) {
-			track_view->draw_mask(chan_drawpos, 47, edit_copy_mask, current_position, mc, 2);
+			track_view->draw_mask(chan_drawpos, VGAMEM_ROWS - 3, edit_copy_mask, current_position, mc, 2);
 		}
 		/* blah */
 		if (channel_multi[chan - 1]) {
 			if (track_view_scheme[chan_pos] == 0) {
-				draw_char(172, chan_drawpos + 3, 47, mc, 2);
+				draw_char(172, chan_drawpos + 3, VGAMEM_ROWS - 3, mc, 2);
 			} else if (track_view_scheme[chan_pos] < 3) {
-				draw_char(172, chan_drawpos + 2, 47, mc, 2);
+				draw_char(172, chan_drawpos + 2, VGAMEM_ROWS - 3, mc, 2);
 			} else if (track_view_scheme[chan_pos] == 3) {
-				draw_char(172, chan_drawpos + 1, 47, mc, 2);
+				draw_char(172, chan_drawpos + 1, VGAMEM_ROWS - 3, mc, 2);
 			} else if (current_position < 2) {
-				draw_char(172, chan_drawpos, 47, mc, 2);
+				draw_char(172, chan_drawpos, VGAMEM_ROWS - 3, mc, 2);
 			}
 		}
 
@@ -3880,15 +3882,15 @@ static int pattern_editor_handle_alt_key(struct key_event * k)
 			return 1;
 		if (top_display_row > 0) {
 			top_display_row--;
-			if (current_row > top_display_row + 31)
-				current_row = top_display_row + 31;
+			if (current_row > top_display_row + VISIBLE_LINES - 1)
+				current_row = top_display_row + VISIBLE_LINES - 1;
 			return -1;
 		}
 		return 1;
 	case SCHISM_KEYSYM_DOWN:
 		if (k->state == KEY_RELEASE)
 			return 1;
-		if (top_display_row + 31 < max_row_number) {
+		if (top_display_row + VISIBLE_LINES - 1 < max_row_number) {
 			top_display_row++;
 			if (current_row < top_display_row)
 				current_row = top_display_row;
@@ -4214,14 +4216,14 @@ static int pattern_editor_handle_key(struct key_event * k)
 			if (k->mouse == MOUSE_SCROLL_UP) {
 				if (top_display_row > 0) {
 					top_display_row = MAX(top_display_row - MOUSE_SCROLL_LINES, 0);
-					if (current_row > top_display_row + 31)
-						current_row = top_display_row + 31;
+					if (current_row > top_display_row + VISIBLE_LINES - 1)
+						current_row = top_display_row + VISIBLE_LINES - 1;
 					if (current_row < 0)
 						current_row = 0;
 					return -1;
 				}
 			} else if (k->mouse == MOUSE_SCROLL_DOWN) {
-				if (top_display_row + 31 < max_row_number) {
+				if (top_display_row + VISIBLE_LINES - 1 < max_row_number) {
 					top_display_row = MIN(top_display_row + MOUSE_SCROLL_LINES, max_row_number);
 					if (current_row < top_display_row)
 						current_row = top_display_row;

@@ -334,8 +334,8 @@ static void file_list_reposition(void)
 	if (current_file < top_file)
 		top_file = current_file;
 
-	else if (current_file > top_file + 30)
-		top_file = current_file - 30;
+	else if (current_file > top_file + (VGAMEM_ROWS - 20))
+		top_file = current_file - (VGAMEM_ROWS - 20);
 
 	status.flags |= NEED_UPDATE;
 }
@@ -349,8 +349,8 @@ static void dir_list_reposition(void)
 
 	if (current_dir < top_dir)
 		top_dir = current_dir;
-	else if (current_dir > top_dir + 21)
-		top_dir = current_dir - 21;
+	else if (current_dir > top_dir + (VGAMEM_ROWS - 39))
+		top_dir = current_dir - (VGAMEM_ROWS - 39);
 
 	status.flags |= NEED_UPDATE;
 }
@@ -414,14 +414,21 @@ static uint32_t search_text[SCHISM_NAME_MAX + 1] = {0};
 static int search_first_char = 0;       /* first visible character */
 static int search_text_length = 0;      /* same as strlen(search_text) */
 
+#define SEARCH_LEFT ((VGAMEM_COLUMNS / 2) + 11)
+#define SEARCH_RIGHT (VGAMEM_COLUMNS - 4)
+
+#define SEARCH_WIDTH (SEARCH_RIGHT - SEARCH_LEFT)
+
 static void search_redraw(void)
 {
-	draw_fill_chars(51, 37, 76, 37, DEFAULT_FG, 0);
-	draw_text_charset_len(search_text + search_first_char, CHARSET_UCS4, 25, 51, 37, 5, 0);
+	int hx = VGAMEM_COLUMNS / 2;
+
+	draw_fill_chars(SEARCH_LEFT, VGAMEM_ROWS - 13, SEARCH_RIGHT, VGAMEM_ROWS - 13, DEFAULT_FG, 0);
+	draw_text_charset_len(search_text + search_first_char, CHARSET_UCS4, SEARCH_WIDTH, hx + 11, VGAMEM_ROWS - 13, 5, 0);
 
 	/* draw the cursor if it's on the dir/file list */
 	if (ACTIVE_PAGE.selected_widget == 0 || ACTIVE_PAGE.selected_widget == 1) {
-		draw_char(0, 51 + search_text_length - search_first_char, 37, 0, 6);
+		draw_char(0, hx + 11 + search_text_length - search_first_char, VGAMEM_ROWS - 13, 0, 6);
 	}
 }
 
@@ -429,8 +436,8 @@ static void search_update(void)
 {
 	int n;
 
-	search_first_char = (search_text_length > 25)
-		? (search_text_length - 25)
+	search_first_char = (search_text_length > SEARCH_WIDTH)
+		? (search_text_length - SEARCH_WIDTH)
 		: 0;
 
 	/* go through the file/dir list (whatever one is selected) and
@@ -480,8 +487,8 @@ static void search_text_delete_char(void)
 
 	search_text[--search_text_length] = 0;
 
-	search_first_char = (search_text_length > 25)
-		? (search_text_length - 25)
+	search_first_char = (search_text_length > SEARCH_WIDTH)
+		? (search_text_length - SEARCH_WIDTH)
 		: 0;
 
 	status.flags |= NEED_UPDATE;
@@ -532,33 +539,39 @@ static int change_dir(const char *dir)
 
 static void both_module_draw_const(void)
 {
-	draw_text("Filename", 4, 46, 0, 2);
-	draw_text("Directory", 3, 47, 0, 2);
-	draw_char(0, 51, 37, 0, 6);
-	draw_box(2, 12, 49, 44, BOX_THICK | BOX_INNER | BOX_INSET); /* file list */
-	draw_box(50, 36, 77, 38, BOX_THICK | BOX_INNER | BOX_INSET); /* search */
-	draw_box(50, 39, 77, 44, BOX_THICK | BOX_INNER | BOX_INSET); /* file info */
-	draw_box(12, 45, 77, 48, BOX_THICK | BOX_INNER | BOX_INSET); /* filename and directory input */
+	int hx = VGAMEM_COLUMNS / 2;
 
-	draw_fill_chars(13, 46, 76, 47, DEFAULT_FG, 0);
+	draw_text("Filename", 4, VGAMEM_ROWS - 4, 0, 2);
+	draw_text("Directory", 3, VGAMEM_ROWS - 3, 0, 2);
+	draw_char(0, hx + 11, VGAMEM_ROWS - 13, 0, 6);
+	draw_box(2, 12, hx + 9, VGAMEM_ROWS - 6, BOX_THICK | BOX_INNER | BOX_INSET); /* file list */
+	draw_box(hx + 10, VGAMEM_ROWS - 14, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 12, BOX_THICK | BOX_INNER | BOX_INSET); /* search */
+	draw_box(hx + 10, VGAMEM_ROWS - 11, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 6, BOX_THICK | BOX_INNER | BOX_INSET); /* file info */
+	draw_box(12, VGAMEM_ROWS - 5, hx + 37, VGAMEM_ROWS - 2, BOX_THICK | BOX_INNER | BOX_INSET); /* filename and directory input */
+
+	draw_fill_chars(13, VGAMEM_ROWS - 4, VGAMEM_COLUMNS - 4, VGAMEM_ROWS - 3, DEFAULT_FG, 0);
 }
 
 static void load_module_draw_const(void)
 {
 	both_module_draw_const();
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	/* dir list */
-	draw_box(50, 12, 77, 35, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_fill_chars(51, 37, 76, 37, DEFAULT_FG, 0);
+	draw_box(hx + 10, 12, VGAMEM_COLUMNS - 3, VGAMEM_ROWS - 15, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(hx + 11, VGAMEM_ROWS - 13, VGAMEM_COLUMNS - 4, VGAMEM_ROWS - 13, DEFAULT_FG, 0);
 }
 
 static void save_module_draw_const(void)
 {
 	both_module_draw_const();
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	/* dir list */
-	draw_box(50, 12, 68, 35, BOX_THICK | BOX_INNER | BOX_INSET);
-	draw_fill_chars(51, 37, 67, 37, DEFAULT_FG, 0);
+	draw_box(hx + 10, 12, VGAMEM_COLUMNS - 12, VGAMEM_ROWS - 15, BOX_THICK | BOX_INNER | BOX_INSET);
+	draw_fill_chars(hx + 11, VGAMEM_ROWS - 13, VGAMEM_COLUMNS - 13, VGAMEM_ROWS - 13, DEFAULT_FG, 0);
 }
 
 /* --------------------------------------------------------------------- */
@@ -570,7 +583,9 @@ static void file_list_draw(void)
 	char buf[32];
 	dmoz_file_t *file;
 
-	draw_fill_chars(3, 13, 48, 43, DEFAULT_FG, 0);
+	int hx = VGAMEM_COLUMNS / 2;
+
+	draw_fill_chars(3, 13, hx + 8, VGAMEM_ROWS - 7, DEFAULT_FG, 0);
 
 	if (flist.num_files > 0) {
 		if (top_file < 0) top_file = 0;
@@ -591,32 +606,32 @@ static void file_list_draw(void)
 			draw_text_utf8_len(file->base ? file->base : "", 20, 3, pos, fg1, bg);
 
 			draw_char(168, 23, pos, 2, bg);
-			draw_text_len(file->title ? file->title : "", 25, 24, pos, fg2, bg);
+			draw_text_len(file->title ? file->title : "", hx - 15, 24, pos, fg2, bg);
 		}
 
 		/* info for the current file */
 		if (current_file >= 0 && current_file < flist.num_files) {
 			file = flist.files[current_file];
-			draw_text_len(file->description ? file->description : "", 26, 51, 40, 5, 0);
+			draw_text_len(file->description ? file->description : "", hx - 14, hx + 11, VGAMEM_ROWS - 10, 5, 0);
 			sprintf(buf, "%09lu", (unsigned long)file->filesize);
-			draw_text_len(buf, 26, 51, 41, 5, 0);
-			draw_text_len(str_from_date(file->timestamp, buf, cfg_str_date_format), 26, 51, 42, 5, 0);
-			draw_text_len(str_from_time(file->timestamp, buf, cfg_str_time_format), 26, 51, 43, 5, 0);
+			draw_text_len(buf, hx - 14, hx + 11, VGAMEM_ROWS - 9, 5, 0);
+			draw_text_len(str_from_date(file->timestamp, buf, cfg_str_date_format), hx - 14, hx + 11, VGAMEM_ROWS - 8, 5, 0);
+			draw_text_len(str_from_time(file->timestamp, buf, cfg_str_time_format), hx - 14, hx + 11, VGAMEM_ROWS - 7, 5, 0);
 		}
 	} else {
 		if (ACTIVE_PAGE.selected_widget == 0) {
 			draw_text("No files.", 3, 13, 0, 3);
-			draw_fill_chars(12, 13, 48, 13, DEFAULT_FG, 3);
+			draw_fill_chars(12, 13, hx + 8, 13, DEFAULT_FG, 3);
 			draw_char(168, 23, 13, 2, 3);
 			pos = 14;
 		} else {
 			draw_text("No files.", 3, 13, 7, 0);
 			pos = 13;
 		}
-		draw_fill_chars(51, 40, 76, 43, DEFAULT_FG, 0);
+		draw_fill_chars(hx + 11, VGAMEM_ROWS - 10, VGAMEM_COLUMNS - 4, VGAMEM_ROWS - 7, DEFAULT_FG, 0);
 	}
 
-	while (pos < 44)
+	while (pos < VGAMEM_ROWS - 6)
 		draw_char(168, 23, pos++, 2, 0);
 
 	/* bleh */
@@ -702,10 +717,10 @@ static int file_list_handle_key(struct key_event * k)
 		new_file++;
 		break;
 	case SCHISM_KEYSYM_PAGEUP:
-		new_file -= 31;
+		new_file -= (VGAMEM_ROWS - 19);
 		break;
 	case SCHISM_KEYSYM_PAGEDOWN:
-		new_file += 31;
+		new_file += (VGAMEM_ROWS - 19);
 		break;
 	case SCHISM_KEYSYM_HOME:
 		new_file = 0;
@@ -755,6 +770,7 @@ static int file_list_handle_key(struct key_event * k)
 
 	if (k->mouse != MOUSE_NONE && !(k->x >= w->x && k->x <= w->x + w->width && k->y >= w->y && k->y <= w->y + w->height))
 		return 0;
+
 	switch (k->mouse) {
 	case MOUSE_CLICK:
 		if (k->state != KEY_PRESS)
@@ -777,8 +793,8 @@ static int file_list_handle_key(struct key_event * k)
 		   this can't be CLAMP'd because the first check might scroll
 		   too far back if the list is small.
 		   (hrm, should add a BOTTOM_FILE macro or something) */
-		if (top_file > flist.num_files - 31)
-			top_file = flist.num_files - 31;
+		if (top_file > flist.num_files - (VGAMEM_ROWS - 19))
+			top_file = flist.num_files - (VGAMEM_ROWS - 19);
 		if (top_file < 0)
 			top_file = 0;
 		status.flags |= NEED_UPDATE;
@@ -807,9 +823,11 @@ static void dir_list_draw(int width)
 {
 	int n, pos, fg, bg;
 
-	draw_fill_chars(51, 13, 51 + width - 1, 34, DEFAULT_FG, 0);
+	int hx = VGAMEM_COLUMNS / 2;
 
-	for (n = top_dir, pos = 13; pos < 35; n++, pos++) {
+	draw_fill_chars(hx + 11, 13, hx + 11 + width - 1, VGAMEM_ROWS - 16, DEFAULT_FG, 0);
+
+	for (n = top_dir, pos = 13; pos < VGAMEM_ROWS - 15; n++, pos++) {
 		if (n < 0) continue; /* er... */
 		if (n >= dlist.num_dirs)
 			break;
@@ -822,7 +840,7 @@ static void dir_list_draw(int width)
 			bg = 0;
 		}
 
-		draw_text_utf8_len(dlist.dirs[n]->base, width, 51, pos, fg, bg);
+		draw_text_utf8_len(dlist.dirs[n]->base, width, hx + 11, pos, fg, bg);
 	}
 
 	/* bleh */
@@ -831,12 +849,12 @@ static void dir_list_draw(int width)
 
 static void dir_list_draw_load(void)
 {
-	dir_list_draw(77 - 51);
+	dir_list_draw((VGAMEM_COLUMNS - 3) - (VGAMEM_COLUMNS / 2 + 11));
 }
 
 static void dir_list_draw_exportsave(void)
 {
-	dir_list_draw(68 - 51);
+	dir_list_draw((VGAMEM_COLUMNS - 12) - (VGAMEM_COLUMNS / 2 + 11));
 }
 
 static int dir_list_handle_text_input(const char *text)
@@ -848,8 +866,10 @@ static inline int dir_list_handle_key(struct key_event * k, unsigned int width)
 {
 	int new_dir = current_dir;
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	if (k->mouse != MOUSE_NONE) {
-		if (k->x >= 51 && k->x <= (51 + width - 1) && k->y >= 13 && k->y <= 34) {
+		if (k->x >= hx + 11 && k->x <= (hx + 11 + width - 1) && k->y >= 13 && k->y <= VGAMEM_ROWS - 16) {
 			switch (k->mouse) {
 				case MOUSE_CLICK:
 					new_dir = (k->y - 13) + top_dir;
@@ -888,10 +908,10 @@ static inline int dir_list_handle_key(struct key_event * k, unsigned int width)
 		new_dir++;
 		break;
 	case SCHISM_KEYSYM_PAGEUP:
-		new_dir -= 21;
+		new_dir -= (VGAMEM_ROWS - 29);
 		break;
 	case SCHISM_KEYSYM_PAGEDOWN:
-		new_dir += 21;
+		new_dir += (VGAMEM_ROWS - 29);
 		break;
 	case SCHISM_KEYSYM_HOME:
 		new_dir = 0;
@@ -1045,6 +1065,8 @@ void load_module_load_page(struct page *page)
 	dir_list_reposition();
 	file_list_reposition();
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	page->title = "Load Module (F9)";
 	page->draw_const = load_module_draw_const;
 	page->set_page = load_module_set_page;
@@ -1057,21 +1079,21 @@ void load_module_load_page(struct page *page)
 	widgets_loadmodule[0].accept_text = 1;
 	widgets_loadmodule[0].x = 3;
 	widgets_loadmodule[0].y = 13;
-	widgets_loadmodule[0].width = 45;
-	widgets_loadmodule[0].height = 30;
+	widgets_loadmodule[0].width = hx + 5;
+	widgets_loadmodule[0].height = VGAMEM_ROWS - 20;
 	widgets_loadmodule[0].next.left = widgets_loadmodule[0].next.right = 1;
 
 	widget_create_other(widgets_loadmodule + 1, 2, dir_list_handle_key_load,
 		dir_list_handle_text_input, dir_list_draw_load);
 	widgets_loadmodule[1].accept_text = 1;
-	widgets_loadmodule[1].x = 50;
+	widgets_loadmodule[1].x = hx + 10;
 	widgets_loadmodule[1].y = 13;
-	widgets_loadmodule[1].width = 27;
-	widgets_loadmodule[1].height = 22;
+	widgets_loadmodule[1].width = hx - 13;
+	widgets_loadmodule[1].height = VGAMEM_ROWS - 28;
 
-	widget_create_textentry(widgets_loadmodule + 2, 13, 46, 64, 0, 3, 3, NULL, filename_entry, ARRAY_SIZE(filename_entry) - 1);
+	widget_create_textentry(widgets_loadmodule + 2, 13, VGAMEM_ROWS - 4, VGAMEM_COLUMNS - 16, 0, 3, 3, NULL, filename_entry, ARRAY_SIZE(filename_entry) - 1);
 	widgets_loadmodule[2].activate = filename_entered;
-	widget_create_textentry(widgets_loadmodule + 3, 13, 47, 64, 2, 3, 0, NULL, dirname_entry, ARRAY_SIZE(dirname_entry) - 1);
+	widget_create_textentry(widgets_loadmodule + 3, 13, VGAMEM_ROWS - 3, VGAMEM_COLUMNS - 16, 2, 3, 0, NULL, dirname_entry, ARRAY_SIZE(dirname_entry) - 1);
 	widgets_loadmodule[3].activate = dirname_entered;
 }
 
@@ -1115,6 +1137,8 @@ void save_module_load_page(struct page *page, int do_export)
 	dir_list_reposition();
 	file_list_reposition();
 
+	int hx = VGAMEM_COLUMNS / 2;
+
 	page->draw_const = save_module_draw_const;
 	page->set_page = save_module_set_page;
 	page->total_widgets = 4;
@@ -1129,22 +1153,22 @@ void save_module_load_page(struct page *page, int do_export)
 	widgets_exportsave[0].next.right = widgets_exportsave[0].next.tab = 1;
 	widgets_exportsave[0].x = 3;
 	widgets_exportsave[0].y = 13;
-	widgets_exportsave[0].width = 45;
-	widgets_exportsave[0].height = 30;
+	widgets_exportsave[0].width = hx + 5;
+	widgets_exportsave[0].height = VGAMEM_ROWS - 20;
 
 	widget_create_other(widgets_exportsave + 1, 2, dir_list_handle_key_exportsave,
 		dir_list_handle_text_input, dir_list_draw_exportsave);
 	widgets_exportsave[1].accept_text = 1;
 	widgets_exportsave[1].next.right = widgets_exportsave[1].next.tab = 5;
 	widgets_exportsave[1].next.left = 0;
-	widgets_exportsave[1].x = 50;
+	widgets_exportsave[1].x = hx + 10;
 	widgets_exportsave[1].y = 13;
-	widgets_exportsave[1].width = 18;
-	widgets_exportsave[1].height = 22;
+	widgets_exportsave[1].width = hx - 22;
+	widgets_exportsave[1].height = VGAMEM_ROWS - 38;
 
-	widget_create_textentry(widgets_exportsave + 2, 13, 46, 64, 0, 3, 3, NULL, filename_entry, ARRAY_SIZE(filename_entry) - 1);
+	widget_create_textentry(widgets_exportsave + 2, 13, VGAMEM_ROWS - 4, 64, 0, 3, 3, NULL, filename_entry, ARRAY_SIZE(filename_entry) - 1);
 	widgets_exportsave[2].activate = filename_entered;
-	widget_create_textentry(widgets_exportsave + 3, 13, 47, 64, 2, 0, 0, NULL, dirname_entry, ARRAY_SIZE(dirname_entry) - 1);
+	widget_create_textentry(widgets_exportsave + 3, 13, VGAMEM_ROWS - 3, 64, 2, 0, 0, NULL, dirname_entry, ARRAY_SIZE(dirname_entry) - 1);
 	widgets_exportsave[3].activate = dirname_entered;
 
 	widgets_exportsave[4].d.togglebutton.state = 1;
@@ -1178,7 +1202,7 @@ void save_module_load_page(struct page *page, int do_export)
 			continue;
 
 		widget_create_togglebutton(widgets_exportsave + 4 + c,
-				70, 13 + (3 * c), 5,
+				VGAMEM_COLUMNS - 10, 13 + (3 * c), 5,
 				4 + (c == 0 ? 0 : (c - 1)),
 				4 + (c + 1),
 				1, 2, 2,

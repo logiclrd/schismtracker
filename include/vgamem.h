@@ -32,6 +32,8 @@
 #define VGAMEM_COLUMNS      80
 #define VGAMEM_ROWS         50
 
+SCHISM_STATIC_ASSERT((VGAMEM_COLUMNS >= 80) && (VGAMEM_ROWS >= 50), "Screen character resolution must be at least 80x50.");
+
 #define NATIVE_SCREEN_WIDTH     (VGAMEM_COLUMNS * 8)
 #define NATIVE_SCREEN_HEIGHT    (VGAMEM_ROWS * 8)
 
@@ -45,9 +47,18 @@ void vgamem_clear(void);
 void vgamem_flip(void);
 
 /* scan to pixel data */
-SCHISM_SIMD SCHISM_HOT void vgamem_scan8 (uint32_t y, uint8_t  *out, uint32_t tc[16], uint32_t mouseline[80], uint32_t mouseline_mask[80]);
-SCHISM_SIMD SCHISM_HOT void vgamem_scan16(uint32_t y, uint16_t *out, uint32_t tc[16], uint32_t mouseline[80], uint32_t mouseline_mask[80]);
-SCHISM_SIMD SCHISM_HOT void vgamem_scan32(uint32_t y, uint32_t *out, uint32_t tc[16], uint32_t mouseline[80], uint32_t mouseline_mask[80]);
+SCHISM_SIMD SCHISM_HOT void vgamem_scan8 (uint32_t y, uint8_t  *out, uint32_t tc[16], uint32_t mouseline[VGAMEM_COLUMNS], uint32_t mouseline_mask[VGAMEM_COLUMNS]);
+SCHISM_SIMD SCHISM_HOT void vgamem_scan16(uint32_t y, uint16_t *out, uint32_t tc[16], uint32_t mouseline[VGAMEM_COLUMNS], uint32_t mouseline_mask[VGAMEM_COLUMNS]);
+SCHISM_SIMD SCHISM_HOT void vgamem_scan32(uint32_t y, uint32_t *out, uint32_t tc[16], uint32_t mouseline[VGAMEM_COLUMNS], uint32_t mouseline_mask[VGAMEM_COLUMNS]);
+
+/* --------------------------------------------------------------------------- */
+
+/* All dialogs are laid out assuming they will be on an 80x50 buffer.
+ * If VGAMEM_COLUMNS x VGAMEM_ROWS varies from this, then all
+ * associated drawing needs to be shifted to keep the dialogs
+ * centred.
+ */
+void draw_offset(int dx, int dy);
 
 /* ---------------------------------------------------------------------------
  * drawing overlays; can draw practically anything given the length

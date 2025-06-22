@@ -417,7 +417,7 @@ static int orderlist_handle_key_on_list(struct key_event * k)
 	int n, p;
 
 	if (k->mouse != MOUSE_NONE) {
-		if (k->x >= 6 && k->x <= 8 && k->y >= 15 && k->y <= 46) {
+		if (k->x >= 6 && k->x <= 8 && k->y >= 15 && k->y <= VGAMEM_ROWS - 4) {
 			/* FIXME adjust top_order, not the cursor */
 			if (k->mouse == MOUSE_SCROLL_UP) {
 				new_order -= MOUSE_SCROLL_LINES;
