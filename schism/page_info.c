@@ -833,33 +833,12 @@ static void info_draw_waveform(struct info_window *window, int base, int height,
 			recent_samples = RECENT_SAMPLE_BUFFER(current_song, chan);
 			idx = (chan >= MAX_VOICES) ? csf_get_oldest_recent_sample_output() : voice->oldest_recent_sample;
 
-#ifdef WAVEFORMVIS_JOINED
-			int ly = -1;
-#endif
-
-			for (int x = x1, h = y2 - y1; x < x2; x++) {
-				int y;
-
-				if (idx >= RECENT_SAMPLE_BUFFER_SIZE)
-					idx = 0;
-
-				y = y1 + (255 - recent_samples[idx]) * h / 255;
-
-#ifndef WAVEFORMVIS_JOINED
-				vgamem_ovl_drawpixel(&window->overlay, x, y, WAVEFORM_COLOUR);
-#else
-				if (ly < 0) {
-					vgamem_ovl_drawpixel(&window->overlay, x, y, WAVEFORM_COLOUR);
-					ly = y;
-				}
-				else {
-					vgamem_ovl_drawline(&window->overlay, x, ly + (y > ly ? 1 : 0), x, y, WAVEFORM_COLOUR);
-					ly = y;
-				}
-#endif
-
-				idx = idx + 1;
-			}
+			draw_sample_data_ex_8(
+				&window->overlay,
+				x1, y1, x2, y2,
+				recent_samples, idx, 1, 1, RECENT_SAMPLE_BUFFER_SIZE,
+				-128, 127,
+				WAVEFORM_COLOUR, 0);
 		}
 
 		if (!window->hide_waveform_label) {

@@ -804,6 +804,170 @@ void draw_vu_meter(int x, int y, int width, int val, int color, int peak)
  * input channels = number of channels in data
 */
 
+void draw_sample_data_ex_32(struct vgamem_overlay *r, int x1, int y1, int x2, int y2,
+	int32_t *data, int offset, int stride, int advance, int length,
+	int32_t min_value, int32_t max_value, int colour, int joined)
+{
+	// To avoid needing a 64-bit intermediate, all samples are scaled
+	// and the 16-bit values are then processed.
+
+	int32_t mid = ((min_value >> 8) + (max_value >> 8)) >> 9;
+
+	max_value >>= 16;
+	min_value >>= 16;
+
+	int32_t range = (int)max_value - min_value;
+
+	int ly = -1;
+
+	for (int x = x1, h = y2 - y1; x < x2; x++) {
+		int y;
+
+		int32_t max, max_mag = 0;
+
+		for (int i = 0; i < advance; i++)
+		{
+			int scaled, magnitude;
+
+			if (offset >= length)
+				offset -= length;
+
+			scaled = data[offset] >> 16;
+			magnitude = (scaled >> 16) - mid;
+
+			if (magnitude < 0)
+				magnitude = -magnitude;
+
+			if (magnitude > max_mag) {
+				max = scaled >> 16;
+				max_mag = magnitude;
+			}
+
+			offset += stride;
+		}
+
+		y = (int)max - min_value;
+		y = y1 + (range - y) * h / range;
+
+		if (!joined)
+			vgamem_ovl_drawpixel(r, x, y, colour);
+		else {
+			if (ly < 0) {
+				vgamem_ovl_drawpixel(r, x, y, colour);
+				ly = y;
+			}
+			else {
+				vgamem_ovl_drawline(r, x, ly + (y > ly ? 1 : 0), x, y, colour);
+				ly = y;
+			}
+		}
+	}
+}
+
+void draw_sample_data_ex_16(struct vgamem_overlay *r, int x1, int y1, int x2, int y2,
+	int16_t *data, int offset, int stride, int advance, int length,
+	int16_t min_value, int16_t max_value, int colour, int joined)
+{
+	int32_t mid = (min_value + max_value) >> 1;
+	int32_t range = (int)max_value - min_value;
+
+	int ly = -1;
+
+	for (int x = x1, h = y2 - y1; x < x2; x++) {
+		int y;
+
+		int32_t max, max_mag = 0;
+
+		for (int i = 0; i < advance; i++)
+		{
+			int magnitude;
+
+			if (offset >= length)
+				offset -= length;
+
+			magnitude = data[offset] - mid;
+
+			if (magnitude < 0)
+				magnitude = -magnitude;
+
+			if (magnitude > max_mag) {
+				max = data[offset];
+				max_mag = magnitude;
+			}
+
+			offset += stride;
+		}
+
+		y = (int)max - min_value;
+		y = y1 + (range - y) * h / range;
+
+		if (!joined)
+			vgamem_ovl_drawpixel(r, x, y, colour);
+		else {
+			if (ly < 0) {
+				vgamem_ovl_drawpixel(r, x, y, colour);
+				ly = y;
+			}
+			else {
+				vgamem_ovl_drawline(r, x, ly + (y > ly ? 1 : 0), x, y, colour);
+				ly = y;
+			}
+		}
+	}
+}
+
+void draw_sample_data_ex_8(struct vgamem_overlay *r, int x1, int y1, int x2, int y2,
+	int8_t *data, int offset, int stride, int advance, int length,
+	int8_t min_value, int8_t max_value, int colour, int joined)
+{
+	int32_t mid = (min_value + max_value) >> 1;
+	int32_t range = (int)max_value - min_value;
+
+	int ly = -1;
+
+	for (int x = x1, h = y2 - y1; x < x2; x++) {
+		int y;
+
+		int32_t max, max_mag = 0;
+
+		for (int i = 0; i < advance; i++)
+		{
+			int magnitude;
+
+			if (offset >= length)
+				offset -= length;
+
+			magnitude = data[offset] - mid;
+
+			if (magnitude < 0)
+				magnitude = -magnitude;
+
+			if (magnitude > max_mag) {
+				max = data[offset];
+				max_mag = magnitude;
+			}
+
+			offset += stride;
+		}
+
+		y = (int)max - min_value;
+		y = y1 + (range - y) * h / range;
+
+		if (!joined)
+			vgamem_ovl_drawpixel(r, x, y, colour);
+		else {
+			if (ly < 0) {
+				vgamem_ovl_drawpixel(r, x, y, colour);
+				ly = y;
+			}
+			else {
+				vgamem_ovl_drawline(r, x, ly + (y > ly ? 1 : 0), x, y, colour);
+				ly = y;
+			}
+		}
+	}
+}
+
 /* somewhat heavily based on CViewSample::DrawSampleData2 in modplug
  *
  * TODO: vectorized sample drawing. */
