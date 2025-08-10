@@ -31,6 +31,10 @@
 
 #include <SDL_syswm.h>
 
+#ifdef SCHISM_WIN32
+# include <windows.h>
+#endif
+
 #ifdef SCHISM_MACOS
 # include <Windows.h>
 # include <Quickdraw.h>
@@ -806,6 +810,59 @@ static void sdl12_pump_events(void)
 
 static const char *sdl12_get_key_name_from_scancode(int scancode)
 {
+#ifdef SCHISM_WIN32
+	// I'm making the big assumption here that keys not in this list definitely
+	// don't change. :-P
+	switch (scancode)
+	{
+		case SCHISM_SCANCODE_A:
+		case SCHISM_SCANCODE_B:
+		case SCHISM_SCANCODE_C:
+		case SCHISM_SCANCODE_D:
+		case SCHISM_SCANCODE_E:
+		case SCHISM_SCANCODE_F:
+		case SCHISM_SCANCODE_G:
+		case SCHISM_SCANCODE_H:
+		case SCHISM_SCANCODE_I:
+		case SCHISM_SCANCODE_J:
+		case SCHISM_SCANCODE_K:
+		case SCHISM_SCANCODE_L:
+		case SCHISM_SCANCODE_M:
+		case SCHISM_SCANCODE_N:
+		case SCHISM_SCANCODE_O:
+		case SCHISM_SCANCODE_P:
+		case SCHISM_SCANCODE_Q:
+		case SCHISM_SCANCODE_R:
+		case SCHISM_SCANCODE_S:
+		case SCHISM_SCANCODE_T:
+		case SCHISM_SCANCODE_U:
+		case SCHISM_SCANCODE_V:
+		case SCHISM_SCANCODE_W:
+		case SCHISM_SCANCODE_X:
+		case SCHISM_SCANCODE_Y:
+		case SCHISM_SCANCODE_Z:
+		case SCHISM_SCANCODE_MINUS:
+		case SCHISM_SCANCODE_EQUALS:
+		case SCHISM_SCANCODE_LEFTBRACKET:
+		case SCHISM_SCANCODE_RIGHTBRACKET:
+		case SCHISM_SCANCODE_BACKSLASH:
+		case SCHISM_SCANCODE_NONUSHASH:
+		case SCHISM_SCANCODE_SEMICOLON:
+		case SCHISM_SCANCODE_APOSTROPHE:
+		case SCHISM_SCANCODE_GRAVE:
+		case SCHISM_SCANCODE_COMMA:
+		case SCHISM_SCANCODE_PERIOD:
+		case SCHISM_SCANCODE_SLASH:
+		case SCHISM_SCANCODE_NONUSBACKSLASH:
+			static char buffer[100];
+
+			if (GetKeyNameTextA(scancode << 16, buffer, sizeof(buffer)) > 0)
+				return buffer;
+
+			break;
+	}
+#endif
+
 	switch (scancode)
 	{
 	/* USB keyboard page... */
