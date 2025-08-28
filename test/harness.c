@@ -26,6 +26,7 @@
 
 #include "test.h"
 #include "test-tempfile.h"
+#include "test-format.h"
 #include "test-name.h"
 
 #include "charset.h"
@@ -68,6 +69,8 @@ static int run_test(test_index_entry *entry)
 
 	test_log_dump();
 
+	test_format_string_reset();
+
 	free(test_name);
 
 	return result;
@@ -108,8 +111,6 @@ int schism_test_main(int argc, char **argv)
 #ifdef EXERCISE_ASSERTIONS
 	exercise_assertions();
 #endif
-
-	test_name_init();
 
 	/* oke */
 	mt_init();

@@ -138,6 +138,7 @@ noinst_HEADERS = \
 	include/timer.h         \
 	include/test-assertions.h  \
 	include/test-case-index.h  \
+	include/test-format.h      \
 	include/test-funcs.h       \
 	include/test-name.h        \
 	include/test-tempfile.h    \
@@ -708,6 +709,7 @@ schismtrackertest_SOURCES = \
 	schism/main.c               \
 	test/assert.c               \
 	test/harness.c              \
+	test/format.c               \
 	test/name.c                 \
 	test/testresult.c           \
 	test/log.c                  \

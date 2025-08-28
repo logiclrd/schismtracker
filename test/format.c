@@ -21,30 +21,37 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* executing test name */
+#include "headers.h"
 
-#include "test.h"
-#include "test-assertions.h"
+static char string_format_buffer[10000];
+static int string_format_buffer_next = 0;
 
-#include "mem.h"
-
-static char *test_name = NULL;
-
-const char *test_get_name(void)
+void test_format_string_reset(void)
 {
-	return test_name;
+	memset(string_format_buffer, 0, sizeof(string_format_buffer));
+	string_format_buffer_next = 0;
 }
 
-void test_set_name(const char *fmt, ...)
+const char *test_format_string(const char *str)
 {
-	va_list ap;
-	char *old_test_name = test_name;
+	int chars;
+	char *allocated_space;
 
-	va_start(ap, fmt);
-	if (vasprintf(&test_name, fmt, ap) < 0)
-		test_name = str_dup(fmt); // semi-graceful?
-	va_end(ap);
+	if (str == NULL)
+		return "NULL";
 
-	// free this last, because the caller might have passed in the old test name as one of the arguments
-	free(old_test_name);
+	chars = strlen(str) + 3;
+
+	if (string_format_buffer_next + chars >= ARRAY_SIZE(string_format_buffer)) {
+		// Fallback
+		return str;
+	}
+
+	allocated_space = string_format_buffer + string_format_buffer_next;
+
+	string_format_buffer_next += chars;
+
+	sprintf(allocated_space, "\"%s\"", str);
+
+	return allocated_space;
 }

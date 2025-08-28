@@ -23,6 +23,7 @@
 
 #include "test.h"
 #include "test-assertions.h"
+#include "test-format.h"
 #include "test-name.h"
 
 #include "str.h"
@@ -47,7 +48,13 @@ static testresult_t test_str_from_num_thousands(int32_t n, const char *expect)
 
 static testresult_t test_str_concat(const char *arg0, const char *arg1, const char *arg2, const char *arg3, const char *arg4, const char *expected)
 {
-	test_set_name("%s(%Q, %Q, %Q, %Q, %Q)", test_get_name(), arg0, arg1, arg2, arg3, arg4);
+	test_set_name("%s(%s, %s, %s, %s, %s)",
+		test_get_name(),
+		test_format_string(arg0),
+		test_format_string(arg1),
+		test_format_string(arg2),
+		test_format_string(arg3),
+		test_format_string(arg4));
 
 	// Arrange
 	size_t i;

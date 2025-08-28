@@ -21,30 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* executing test name */
+#ifndef SCHISM_TEST_FORMAT_H
+#define SCHISM_TEST_FORMAT_H
 
-#include "test.h"
-#include "test-assertions.h"
+void test_format_string_reset(void);
+const char *test_format_string(const char *str);
 
-#include "mem.h"
-
-static char *test_name = NULL;
-
-const char *test_get_name(void)
-{
-	return test_name;
-}
-
-void test_set_name(const char *fmt, ...)
-{
-	va_list ap;
-	char *old_test_name = test_name;
-
-	va_start(ap, fmt);
-	if (vasprintf(&test_name, fmt, ap) < 0)
-		test_name = str_dup(fmt); // semi-graceful?
-	va_end(ap);
-
-	// free this last, because the caller might have passed in the old test name as one of the arguments
-	free(old_test_name);
-}
+#endif /* SCHISM_TEST_FORMAT_H */
