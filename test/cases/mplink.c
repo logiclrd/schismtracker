@@ -57,7 +57,7 @@ static testresult_t test_song_get_pattern_hook(
 
 	int start_pattern_length = song_get_pattern(start_pattern_number, &pattern);
 
-	REQUIRE(start_pattern_length = test_pattern_length[start_pattern_number]);
+	REQUIRE_EQUAL_D(start_pattern_length, test_pattern_length[start_pattern_number]);
 
 	int pattern_number = start_pattern_number;
 	int row_number = start_row_number;
@@ -83,13 +83,13 @@ static testresult_t test_song_get_pattern_hook(
 
 	// Assert
 	if (expected_pattern_number < 0) { /* expect failure */
-		ASSERT(result == 0);
+		ASSERT_EQUAL_D(result, 0);
 	}
 	else {
-		ASSERT(result == test_pattern_length[expected_pattern_number]);
-		ASSERT(pattern_number == expected_pattern_number);
-		ASSERT(row_number == expected_row_number);
-		ASSERT(pattern == csf->patterns[pattern_number]);
+		ASSERT_EQUAL_D(result, test_pattern_length[expected_pattern_number]);
+		ASSERT_EQUAL_D(pattern_number, expected_pattern_number);
+		ASSERT_EQUAL_D(row_number, expected_row_number);
+		ASSERT_EQUAL_P(pattern, csf->patterns[pattern_number]);
 	}
 
 	csf_free(csf);
@@ -209,7 +209,7 @@ testresult_t test_song_get_pattern_offset_song_LAST(void)
 static testresult_t verify_end_of_song(song_t *csf)
 {
 	ASSERT(csf_get_num_patterns(csf) <= 5);
-	ASSERT(csf->patterns[5] == NULL);
+	ASSERT_NULL(csf->patterns[5]);
 
 	RETURN_PASS;
 }
