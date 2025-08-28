@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+//#define EXERCISE_ASSERTIONS
+//#include "test-assertions.h"
+
 #include "test.h"
 #include "test-tempfile.h"
 #include "test-name.h"
@@ -76,7 +79,7 @@ static testresult_t run_test_child(const char *self, test_index_entry *entry, in
 
 #ifdef HAVE_OS_EXEC
 	int status, abnormal_exit;
-	char test_index_str[11];
+	char test_index_str[15];
 
 	snprintf(test_index_str, ARRAY_SIZE(test_index_str), "%d", test_index);
 
@@ -104,6 +107,10 @@ int schism_test_main(int argc, char **argv)
 	int run_batch = 1;
 	char *filter_expression = NULL;
 	int exit_code;
+
+#ifdef EXERCISE_ASSERTIONS
+	exercise_assertions();
+#endif
 
 	/* oke */
 	mt_init();
