@@ -49,7 +49,7 @@ static int run_test(test_index_entry *entry, int test_index)
 	test_log_clear();
 
 	test_set_name(entry->testcase ? "%s[%d]" : "%s", entry->name, test_index);
-	test_name = strdup(test_get_name()); // copy the computed name in case the test alters it
+	test_name = str_dup(test_get_name()); // copy the computed name in case the test alters it
 
 	printf("TEST: %s ", test_name);
 	fflush(stdout); // in case the test crashes

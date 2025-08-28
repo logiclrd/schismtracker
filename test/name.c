@@ -26,6 +26,8 @@
 #include "test.h"
 #include "test-assertions.h"
 
+#include "mem.h"
+
 static char *test_name = NULL;
 
 const char *test_get_name(void)
@@ -40,7 +42,7 @@ void test_set_name(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (vasprintf(&test_name, fmt, ap) < 0)
-		test_name = strdup(fmt); // semi-graceful?
+		test_name = str_dup(fmt); // semi-graceful?
 	va_end(ap);
 
 	// free this last, because the caller might have passed in the old test name as one of the arguments
