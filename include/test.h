@@ -49,8 +49,6 @@ typedef testresult_t (*testcase_functor_t)(int n);
 typedef struct {
 	const char *name;
 	test_functor_t test;
-	testcase_functor_t testcase;
-	int count;
 } test_index_entry;
 
 /* not sure if I like this being a global; whatever, it's fine for now */
@@ -90,6 +88,25 @@ int schism_test_main(int argc, char *argv[]);
 # define ENTRYPOINT schism_main
 #endif
 
+/* ------------------------------------------------------------------------ */
+/* test thunks */
+
+#define TEST(name) TEST_THUNK(name, name)
+
+// Declare all of the test thunks
+#define TEST_THUNK(name, implementation, ...) \
+	testresult_t test_case_entrypoint_##name(void);
+
 #include "test-funcs.h"
+
+// Prepare for definitions in test/cases/*
+#undef TEST_THUNK
+#define TEST_THUNK(name, implementation, ...) \
+	testresult_t test_case_entrypoint_##name(void) \
+	{ \
+		return implementation(__VA_ARGS__); \
+	}
+
+
 
 #endif /* SCHISM_TEST_H_ */

@@ -46,7 +46,8 @@ static testresult_t test_song_get_pattern_hook(
 	testresult_t (*pre_act)(song_t *csf),
 	int test_offset, // for act
 	testresult_t (*post_act)(song_t *csf),
-	int expected_pattern_number, int expected_row_number) // for assert
+	int expected_pattern_number, int expected_row_number, // for assert
+	testresult_t (*exit_act)(song_t *csf))
 {
 	// Arrange
 	song_t *csf = create_subject();
@@ -66,8 +67,10 @@ static testresult_t test_song_get_pattern_hook(
 	if (pre_act != NULL) {
 		testresult_t pre_result = pre_act(csf);
 
-		if (pre_result != SCHISM_TESTRESULT_PASS)
+		if (pre_result != SCHISM_TESTRESULT_PASS) {
+			if (exit_act != NULL) exit_act(csf);
 			return pre_result;
+		}
 	}
 
 	// Act
@@ -77,8 +80,10 @@ static testresult_t test_song_get_pattern_hook(
 	if (post_act != NULL) {
 		testresult_t post_result = post_act(csf);
 
-		if (post_result != SCHISM_TESTRESULT_PASS)
+		if (post_result != SCHISM_TESTRESULT_PASS) {
+			if (exit_act != NULL) exit_act(csf);
 			return post_result;
+		}
 	}
 
 	// Assert
@@ -94,6 +99,14 @@ static testresult_t test_song_get_pattern_hook(
 
 	csf_free(csf);
 
+	if (exit_act != NULL) {
+		testresult_t exit_result = exit_act(csf);
+
+		if (exit_result != SCHISM_TESTRESULT_PASS) {
+			return exit_result;
+		}
+	}
+
 	RETURN_PASS;
 }
 
@@ -104,106 +117,11 @@ static testresult_t test_song_get_pattern(
 {
 	return test_song_get_pattern_hook(
 		start_pattern_number, start_row_number,
-		NULL, // pre-action hook
+		NULL,  // pre-action hook
 		test_offset,
-		NULL, // post-action hook
-		expected_pattern_number, expected_row_number);
-}
-
-testresult_t test_song_get_pattern_offset_0(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from 0:15
-		0,      // advance by 0 rows
-		0, 15); // expect to be at 0:15
-}
-
-testresult_t test_song_get_pattern_offset_same_pattern_1(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from 0:15
-		1,      // advance by 0 rows
-		0, 16); // expect to be at 0:16
-}
-
-testresult_t test_song_get_pattern_offset_same_pattern_n(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from
-		10,     // advance by
-		0, 25); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_same_pattern_LAST(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from
-		16,     // advance by
-		0, 31); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_next_pattern_FIRST(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from
-		17,     // advance by
-		1, 0); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_next_pattern_n(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from
-		27,     // advance by
-		1, 10); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_next_pattern_LAST(void)
-{
-	return test_song_get_pattern(
-		0, 15,  // starting from
-		31,     // advance by
-		1, 14); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_more_than_two_patterns(void)
-{
-	return test_song_get_pattern(
-		0, 15, // starting from
-		96,    // advance by
-		3, 0); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_from_middle_same_pattern(void)
-{
-	return test_song_get_pattern(
-		2, 15, // starting from
-		2,    // advance by
-		2, 17); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_from_middle_next_pattern(void)
-{
-	return test_song_get_pattern(
-		2, 15, // starting from
-		49,    // advance by
-		3, 0); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_from_middle_more_than_two_patterns(void)
-{
-	return test_song_get_pattern(
-		2, 16, // starting from
-		49,    // advance by
-		4, 0); // expect to be at
-}
-
-testresult_t test_song_get_pattern_offset_song_LAST(void)
-{
-	return test_song_get_pattern(
-		2, 15,  // starting from
-		113,    // advance by
-		4, 63); // expect to be at
+		NULL,  // post-action hook
+		expected_pattern_number, expected_row_number,
+		NULL); // exit hook
 }
 
 static testresult_t verify_end_of_song(song_t *csf)
@@ -221,17 +139,11 @@ static testresult_t latch_new_pattern_length(song_t *csf)
 	RETURN_PASS;
 }
 
-testresult_t test_song_get_pattern_offset_past_end_of_song(void)
+static testresult_t restore_pattern_length_array(song_t *csf)
 {
-	testresult_t result = test_song_get_pattern_hook(
-		2, 15, // starting from
-		verify_end_of_song, // pre hook
-		114,   // advance by
-		latch_new_pattern_length, // post hook
-		5, 0); // expect to be at
-
-	// restore pattern length array
 	test_pattern_length[5] = 0;
 
-	return result;
+	RETURN_PASS;
 }
+
+#include "mplink.f"

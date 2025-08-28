@@ -21,22 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SCHISM_TEST_CASES_H_
-#define SCHISM_TEST_CASES_H_
+#ifndef TEST
+# define TEST(name)
+#endif
 
-#define TEST_FUNC(x)
-#define TEST_CASE_FUNC(x, n) int x##_should_have_##n##_test_cases = 1;
-
-#include "test-funcs.h"
-
-#undef TEST_FUNC
-#undef TEST_CASE_FUNC
-
-#define TEST(x) \
-testresult_t x(void)
-
-#define TEST_CASES(x, count) \
-static int x##_test_cases(void) { return x##_should_have_##count##_test_cases; } /* HAXXX */ \
-testresult_t x(int test_index)
-
-#endif /* SCHISM_TEST_CASES_H_ */
+#ifndef TEST_THUNK
+# define TEST_THUNK(name, implementation, ...)
+#endif

@@ -210,3 +210,5 @@ testresult_t test_slurp_stdio(void)
 }
 
 /* TODO need to add slurp test functions for win32 */
+
+#include "slurp.f"

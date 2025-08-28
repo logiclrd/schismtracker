@@ -137,7 +137,7 @@ noinst_HEADERS = \
 	include/mt.h       \
 	include/timer.h         \
 	include/test-assertions.h  \
-	include/test-cases.h       \
+	include/test-case-index.h  \
 	include/test-funcs.h       \
 	include/test-name.h        \
 	include/test-tempfile.h    \
@@ -200,7 +200,7 @@ else
 endif
 
 if USE_THREADS
-files_mt = 
+files_mt =
 endif
 
 if USE_SDL3
@@ -718,6 +718,13 @@ schismtrackertest_SOURCES = \
 	test/cases/mplink.c         \
 	test/cases/slurp.c          \
 	test/cases/str.c
+
+noinst_HEADERS += \
+	test/cases/bits.f           \
+	test/cases/config-parser.f  \
+	test/cases/mplink.f         \
+	test/cases/slurp.f          \
+	test/cases/str.f
 
 # err, this is flaky, but okay for now i guess
 mains =									\

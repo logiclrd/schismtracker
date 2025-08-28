@@ -24,6 +24,7 @@
 #ifndef SCHISM_TEST_NAME_H
 #define SCHISM_TEST_NAME_H_
 
+void test_name_init(void);
 void test_set_name(const char *fmt, ...);
 const char *test_get_name(void);
 

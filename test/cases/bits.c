@@ -29,7 +29,7 @@
 /* ------------------------------------------------------------------------ */
 /* portable signed bit shift */
 
-testresult_t test_bshift_arithmetic(void)
+static testresult_t test_bshift_arithmetic(void)
 {
 #ifdef HAVE_ARITHMETIC_RSHIFT
 	ASSERT_EQUAL_D(rshift_signed(-0xFFFF, 8), (-0xFFFF >> 8));
@@ -39,13 +39,13 @@ testresult_t test_bshift_arithmetic(void)
 #endif
 }
 
-testresult_t test_bshift_right_shift_negative(void)
+static testresult_t test_bshift_right_shift_negative(void)
 {
 	ASSERT_EQUAL_D(rshift_signed(INT32_C(-0xFFFF), 8), INT32_C(-0x100));
 	RETURN_PASS;
 }
 
-testresult_t test_bshift_left_shift_overflow(void)
+static testresult_t test_bshift_left_shift_overflow(void)
 {
 	ASSERT_EQUAL_D(lshift_signed((int32_t)0xFF000000, 4), (int32_t)0xF0000000);
 	RETURN_PASS;
@@ -54,19 +54,19 @@ testresult_t test_bshift_left_shift_overflow(void)
 /* ------------------------------------------------------------------------ */
 /* byteswap */
 
-testresult_t test_bswap_16(void)
+static testresult_t test_bswap_16(void)
 {
 	ASSERT_EQUAL_SX(bswap_16(0xFEEE), 0xEEFE);
 	RETURN_PASS;
 }
 
-testresult_t test_bswap_32(void)
+static testresult_t test_bswap_32(void)
 {
 	ASSERT_EQUAL_X(bswap_32(0x12345678), 0x78563412);
 	RETURN_PASS;
 }
 
-testresult_t test_bswap_64(void)
+static testresult_t test_bswap_64(void)
 {
 	ASSERT_EQUAL_LX(bswap_64(0x0123456789ABCDEF), 0xEFCDAB8967452301);
 	RETURN_PASS;
@@ -75,7 +75,7 @@ testresult_t test_bswap_64(void)
 /* ------------------------------------------------------------------------ */
 /* absolute value */
 
-testresult_t test_babs8(void)
+static testresult_t test_babs8(void)
 {
 	ASSERT_EQUAL_SD(babs8(-1), 1U);
 	ASSERT_EQUAL_SD(babs8(INT8_MIN), UINT8_C(0x80));
@@ -83,7 +83,7 @@ testresult_t test_babs8(void)
 	RETURN_PASS;
 }
 
-testresult_t test_babs16(void)
+static testresult_t test_babs16(void)
 {
 	ASSERT_EQUAL_SD(babs16(-1), 1U);
 	ASSERT_EQUAL_SD(babs16(INT16_MIN), UINT16_C(0x8000));
@@ -91,7 +91,7 @@ testresult_t test_babs16(void)
 	RETURN_PASS;
 }
 
-testresult_t test_babs32(void)
+static testresult_t test_babs32(void)
 {
 	ASSERT_EQUAL_D(babs32(-1), 1);
 	ASSERT_EQUAL_D(babs32(INT32_MIN), UINT32_C(0x80000000));
@@ -100,7 +100,7 @@ testresult_t test_babs32(void)
 	RETURN_PASS;
 }
 
-testresult_t test_babs64(void)
+static testresult_t test_babs64(void)
 {
 	ASSERT_EQUAL_LD(babs64(-1), 1);
 	ASSERT_EQUAL_LD(babs64(INT64_MIN), UINT64_C(0x8000000000000000));
@@ -112,7 +112,7 @@ testresult_t test_babs64(void)
 /* ------------------------------------------------------------------------ */
 /* unsigned average */
 
-testresult_t test_bavgu8(void)
+static testresult_t test_bavgu8(void)
 {
 	/* generic */
 	ASSERT_EQUAL_SU(bavgu8(0, 2), 1);
@@ -124,7 +124,7 @@ testresult_t test_bavgu8(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgu16(void)
+static testresult_t test_bavgu16(void)
 {
 	/* generic */
 	ASSERT_EQUAL_SU(bavgu16(0, 2), 1);
@@ -136,7 +136,7 @@ testresult_t test_bavgu16(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgu32(void)
+static testresult_t test_bavgu32(void)
 {
 	/* generic */
 	ASSERT_EQUAL_U(bavgu32(0, 2), 1);
@@ -148,7 +148,7 @@ testresult_t test_bavgu32(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgu64(void)
+static testresult_t test_bavgu64(void)
 {
 	/* generic */
 	ASSERT_EQUAL_LU(bavgu64(0, 2), 1);
@@ -163,7 +163,7 @@ testresult_t test_bavgu64(void)
 /* ------------------------------------------------------------------------ */
 /* signed average */
 
-testresult_t test_bavgs8(void)
+static testresult_t test_bavgs8(void)
 {
 	/* generic */
 	ASSERT_EQUAL_SD(bavgs8(0, 2), 1);
@@ -177,7 +177,7 @@ testresult_t test_bavgs8(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgs16(void)
+static testresult_t test_bavgs16(void)
 {
 	/* generic */
 	ASSERT_EQUAL_SD(bavgs16(0, 2), 1);
@@ -191,7 +191,7 @@ testresult_t test_bavgs16(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgs32(void)
+static testresult_t test_bavgs32(void)
 {
 	/* generic */
 	ASSERT_EQUAL_D(bavgs32(0, 2), 1);
@@ -205,7 +205,7 @@ testresult_t test_bavgs32(void)
 	RETURN_PASS;
 }
 
-testresult_t test_bavgs64(void)
+static testresult_t test_bavgs64(void)
 {
 	/* generic */
 	ASSERT_EQUAL_LD(bavgs64(0, 2), 1);
@@ -224,7 +224,7 @@ testresult_t test_bavgs64(void)
 
 #define TEST_BITARRAY_SIZE 515
 
-testresult_t test_bitarray(void)
+static testresult_t test_bitarray(void)
 {
 	int i;
 	BITARRAY_DECLARE(x, TEST_BITARRAY_SIZE);
@@ -242,3 +242,5 @@ testresult_t test_bitarray(void)
 
 	RETURN_PASS;
 }
+
+#include "bits.f"

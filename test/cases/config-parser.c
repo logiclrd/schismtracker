@@ -1,3 +1,26 @@
+/*
+ * Schism Tracker - a cross-platform Impulse Tracker clone
+ * copyright (c) 2003-2005 Storlek <storlek@rigelseven.com>
+ * copyright (c) 2005-2008 Mrs. Brisby <mrs.brisby@nimh.org>
+ * copyright (c) 2009 Storlek & Mrs. Brisby
+ * copyright (c) 2010-2012 Storlek
+ * URL: http://schismtracker.org/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "test.h"
 #include "test-tempfile.h"
 #include "test-assertions.h"
@@ -28,7 +51,7 @@ static const char test_config_file_content[] =
 		} \
 	} while (0)
 
-testresult_t test_config_file_defined_values(void)
+static testresult_t test_config_file_defined_values(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -50,7 +73,7 @@ testresult_t test_config_file_defined_values(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_undefined_values_in_defined_section(void)
+static testresult_t test_config_file_undefined_values_in_defined_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -70,7 +93,7 @@ testresult_t test_config_file_undefined_values_in_defined_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_undefined_section(void)
+static testresult_t test_config_file_undefined_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -90,7 +113,7 @@ testresult_t test_config_file_undefined_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_obviously_broken_values(void)
+static testresult_t test_config_file_obviously_broken_values(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -117,7 +140,7 @@ testresult_t test_config_file_obviously_broken_values(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_null_default_with_value_set(void)
+static testresult_t test_config_file_null_default_with_value_set(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -141,7 +164,7 @@ testresult_t test_config_file_null_default_with_value_set(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_null_default_with_value_set_defined_key(void)
+static testresult_t test_config_file_null_default_with_value_set_defined_key(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -165,7 +188,7 @@ testresult_t test_config_file_null_default_with_value_set_defined_key(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_string_boundary_defined_key(void)
+static testresult_t test_config_file_string_boundary_defined_key(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -191,7 +214,7 @@ testresult_t test_config_file_string_boundary_defined_key(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_string_boundary_default_value(void)
+static testresult_t test_config_file_string_boundary_default_value(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -215,7 +238,7 @@ testresult_t test_config_file_string_boundary_default_value(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_string_boundary_zero(void)
+static testresult_t test_config_file_string_boundary_zero(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -371,7 +394,7 @@ static int grep_config_ex(const cfg_file_t *cfg, const char *section_expr, const
 	return grep_config_impl(cfg, section_expr, key_expr, NULL, out_section ? out_section : &section, out_key ? out_key : &key);
 }
 
-testresult_t test_config_file_set_string_in_new_section(void)
+static testresult_t test_config_file_set_string_in_new_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -394,7 +417,7 @@ testresult_t test_config_file_set_string_in_new_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_new_string_in_existing_section(void)
+static testresult_t test_config_file_set_new_string_in_existing_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -418,7 +441,7 @@ testresult_t test_config_file_set_new_string_in_existing_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_number_in_new_section(void)
+static testresult_t test_config_file_set_number_in_new_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -441,7 +464,7 @@ testresult_t test_config_file_set_number_in_new_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_new_number_in_existing_section(void)
+static testresult_t test_config_file_set_new_number_in_existing_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -465,7 +488,7 @@ testresult_t test_config_file_set_new_number_in_existing_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_string_in_null_section(void)
+static testresult_t test_config_file_set_string_in_null_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -490,7 +513,7 @@ testresult_t test_config_file_set_string_in_null_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_number_in_null_section(void)
+static testresult_t test_config_file_set_number_in_null_section(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -515,7 +538,7 @@ testresult_t test_config_file_set_number_in_null_section(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_string_with_null_key(void)
+static testresult_t test_config_file_set_string_with_null_key(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -540,7 +563,7 @@ testresult_t test_config_file_set_string_with_null_key(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_number_with_null_key(void)
+static testresult_t test_config_file_set_number_with_null_key(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -565,7 +588,7 @@ testresult_t test_config_file_set_number_with_null_key(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_set_string_with_null_value(void)
+static testresult_t test_config_file_set_string_with_null_value(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -598,7 +621,7 @@ testresult_t test_config_file_set_string_with_null_value(void)
 	RETURN_PASS;
 }
 
-testresult_t test_config_file_get_string_with_null_value(void)
+static testresult_t test_config_file_get_string_with_null_value(void)
 {
 	// Arrange
 	cfg_file_t cfg;
@@ -617,3 +640,5 @@ testresult_t test_config_file_get_string_with_null_value(void)
 
 	RETURN_PASS;
 }
+
+#include "config-parser.f"

@@ -118,9 +118,9 @@ void exercise_assertions(void);
 	do { \
 		const char *a = actual, *e = expected; \
 		if ((a == NULL) && ("x" maybe_not == "x")) \
-			ASSERTION(0, actual, " expected: \"%s\"\n actual: NULL", #expected, e); \
+			ASSERTION(0, actual, " expected: \"%s\"\n actual: NULL", e); \
 		else \
-			ASSERTION(CHECK(strcmp(a, e)), actual, " expected: " maybe_not "\"%s\"\n actual: \"%s\"", #expected, e, a); \
+			ASSERTION(CHECK(strcmp(a, e)), actual, " expected: " maybe_not "\"%s\"\n actual: \"%s\"", e, a); \
 	} while (0)
 
 #define REQUIRE_EQUAL_S(actual, expected) SCHISM__STRING_EQUALITY_ASSERTION(actual, expected, SCHISM__TEST_INITIALIZATION_ASSERTION, SCHISM__IS_ZERO, "")

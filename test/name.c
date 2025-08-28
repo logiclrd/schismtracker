@@ -28,6 +28,48 @@
 
 #include "mem.h"
 
+#include <printf.h>
+#include <stdio.h>
+
+static int quote_string(FILE *stream, const struct printf_info *info, const void *const args[])
+{
+	const char *str = *(const char **)args[0];
+	int chars_written;
+
+	if (str == NULL) {
+		chars_written = fprintf(stream, "NULL");
+	}
+	else {
+		chars_written = fprintf(stream, "\"%s\"", str);
+	}
+
+	return chars_written;
+}
+
+static int quote_string_arg_counter(const struct printf_info *info, size_t n, int argtypes[n], int size[n])
+{
+	if (n < 1)
+		return -1;
+
+	argtypes[0] = PA_STRING;
+	return 1;
+}
+
+void test_name_init(void)
+{
+	// Register a new printf specifier: %Q
+	//   Data: const char *
+	//   Formatted:
+	//   - when NULL: "NULL"
+	//   - when non-NULL: "\"string value\""
+	//
+	//   printf("Two strings: %s and %s\n", "hello", NULL);
+	//
+	//   > Two strings: "hello" and NULL
+
+	register_printf_specifier('Q', quote_string, quote_string_arg_counter);
+}
+
 static char *test_name = NULL;
 
 const char *test_get_name(void)

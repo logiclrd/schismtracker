@@ -39,7 +39,7 @@
 #define result_to_exit_code(x) (x)
 #define exit_code_to_result(x) (x)
 
-static int run_test(test_index_entry *entry, int test_index)
+static int run_test(test_index_entry *entry)
 {
 	timer_ticks_t start_time, end_time;
 	char *test_name;
@@ -51,14 +51,14 @@ static int run_test(test_index_entry *entry, int test_index)
 	 * global memory stream) */
 	test_log_clear();
 
-	test_set_name(entry->testcase ? "%s[%d]" : "%s", entry->name, test_index);
+	test_set_name("%s", entry->name);
 	test_name = str_dup(test_get_name()); // copy the computed name in case the test alters it
 
 	printf("TEST: %s ", test_name);
 	fflush(stdout); // in case the test crashes
 
 	start_time = timer_ticks();
-	result = entry->test ? entry->test() : entry->testcase(test_index);
+	result = entry->test();
 	end_time = timer_ticks();
 
 	for (i = 6 + strlen(test_name) + 1; i < 78 - TESTRESULT_STR_MAX_LEN; i++)
@@ -73,17 +73,14 @@ static int run_test(test_index_entry *entry, int test_index)
 	return result;
 }
 
-static testresult_t run_test_child(const char *self, test_index_entry *entry, int test_index)
+static testresult_t run_test_child(const char *self, test_index_entry *entry)
 {
 	static int inproc_warn = 0;
 
 #ifdef HAVE_OS_EXEC
 	int status, abnormal_exit;
-	char test_index_str[15];
 
-	snprintf(test_index_str, ARRAY_SIZE(test_index_str), "%d", test_index);
-
-	if (os_exec(&status, &abnormal_exit, NULL, self, entry->name, test_index_str, (char *)NULL))
+	if (os_exec(&status, &abnormal_exit, NULL, self, entry->name, (char *)NULL))
 		return abnormal_exit ? SCHISM_TESTRESULT_CRASH : status;
 #endif
 
@@ -99,7 +96,7 @@ static testresult_t run_test_child(const char *self, test_index_entry *entry, in
 		inproc_warn = 1;
 	}
 
-	return run_test(entry, test_index);
+	return run_test(entry);
 }
 
 int schism_test_main(int argc, char **argv)
@@ -112,13 +109,14 @@ int schism_test_main(int argc, char **argv)
 	exercise_assertions();
 #endif
 
+	test_name_init();
+
 	/* oke */
 	mt_init();
 	SCHISM_RUNTIME_ASSERT(timer_init(), "need timers");
 
 	if (argc > 1) {
 		char *test_case_name = argv[1];
-		int test_index = argv[2] ? atoi(argv[2]) : 0;
 		int len = strlen(test_case_name);
 
 		if (strpbrk(test_case_name, "*?") != NULL) {
@@ -136,7 +134,7 @@ int schism_test_main(int argc, char **argv)
 				return 3;
 			}
 
-			result = run_test(test_case, test_index);
+			result = run_test(test_case);
 
 			exit_code = result_to_exit_code(result);
 		}
@@ -157,28 +155,24 @@ int schism_test_main(int argc, char **argv)
 			if (filter_expression && charset_fnmatch(filter_expression, CHARSET_UTF8, automated_tests[i].name, CHARSET_UTF8, CHARSET_FNM_PERIOD) != 0)
 				continue;
 
-			count = automated_tests[i].testcase ? automated_tests[i].count : 1;
+			testresult_t result = run_test_child(argv[0], &automated_tests[i]);
 
-			for (j = 0; j < count; j++) {
-				testresult_t result = run_test_child(argv[0], &automated_tests[i], j);
+			if (result == SCHISM_TESTRESULT_PASS) {
+				passed_tests++;
+			} else {
+				failed_tests++;
 
-				if (result == SCHISM_TESTRESULT_PASS) {
-					passed_tests++;
-				} else {
-					failed_tests++;
+				// We assume the crash happened during the test case itself, which means
+				// we've output the name of the test but not the string of dots leading
+				// up to the result.
 
-					// We assume the crash happened during the test case itself, which means
-					// we've output the name of the test but not the string of dots leading
-					// up to the result.
+				if (result == SCHISM_TESTRESULT_CRASH) {
+					for (j = 6 + strlen(automated_tests[i].name) + 1; j < 78 - TESTRESULT_STR_MAX_LEN; j++)
+						fputc('.', stdout);
 
-					if (result == SCHISM_TESTRESULT_CRASH) {
-						for (j = 6 + strlen(automated_tests[i].name) + 1; j < 78 - TESTRESULT_STR_MAX_LEN; j++)
-							fputc('.', stdout);
+					puts(" CRASH");
 
-						puts(" CRASH");
-
-						fflush(stdout);
-					}
+					fflush(stdout);
 				}
 			}
 		}
