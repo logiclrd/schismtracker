@@ -25,7 +25,8 @@
 
 test_index_entry automated_tests[] =
 	{
-#define TEST_FUNC(x) { #x, x },
+#define TEST_FUNC(x) { #x, x, 0, 0 },
+#define TEST_CASE_FUNC(x, c) { #x, 0, x, c },
 #include "test-funcs.h"
 		{0}
 	};

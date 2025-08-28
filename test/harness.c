@@ -23,6 +23,7 @@
 
 #include "test.h"
 #include "test-tempfile.h"
+#include "test-name.h"
 
 #include "charset.h"
 #include "osdefs.h"
@@ -35,9 +36,10 @@
 #define result_to_exit_code(x) (x)
 #define exit_code_to_result(x) (x)
 
-static int run_test(test_index_entry *entry)
+static int run_test(test_index_entry *entry, int test_index)
 {
 	timer_ticks_t start_time, end_time;
+	char *test_name;
 	testresult_t result;
 	int i;
 	char buf[15];
@@ -46,31 +48,39 @@ static int run_test(test_index_entry *entry)
 	 * global memory stream) */
 	test_log_clear();
 
-	printf("TEST: %s ", entry->name);
+	test_set_name(entry->testcase ? "%s[%d]" : "%s", entry->name, test_index);
+	test_name = strdup(test_get_name()); // copy the computed name in case the test alters it
+
+	printf("TEST: %s ", test_name);
 	fflush(stdout); // in case the test crashes
 
 	start_time = timer_ticks();
-	result = entry->test();
+	result = entry->test ? entry->test() : entry->testcase(test_index);
 	end_time = timer_ticks();
 
-	for (i = 6 + strlen(entry->name) + 1; i < 78 - TESTRESULT_STR_MAX_LEN; i++)
+	for (i = 6 + strlen(test_name) + 1; i < 78 - TESTRESULT_STR_MAX_LEN; i++)
 		fputc('.', stdout);
 
 	printf(" %s (%s ms)\n", testresult_str(result), str_from_num_thousands(end_time - start_time, buf));
 
 	test_log_dump();
 
+	free(test_name);
+
 	return result;
 }
 
-static testresult_t run_test_child(const char *self, test_index_entry *entry)
+static testresult_t run_test_child(const char *self, test_index_entry *entry, int test_index)
 {
 	static int inproc_warn = 0;
 
 #ifdef HAVE_OS_EXEC
 	int status, abnormal_exit;
+	char test_index_str[11];
 
-	if (os_exec(&status, &abnormal_exit, NULL, self, entry->name, (char *)NULL))
+	snprintf(test_index_str, ARRAY_SIZE(test_index_str), "%d", test_index);
+
+	if (os_exec(&status, &abnormal_exit, NULL, self, entry->name, test_index_str, (char *)NULL))
 		return abnormal_exit ? SCHISM_TESTRESULT_CRASH : status;
 #endif
 
@@ -86,7 +96,7 @@ static testresult_t run_test_child(const char *self, test_index_entry *entry)
 		inproc_warn = 1;
 	}
 
-	return run_test(entry);
+	return run_test(entry, test_index);
 }
 
 int schism_test_main(int argc, char **argv)
@@ -101,6 +111,7 @@ int schism_test_main(int argc, char **argv)
 
 	if (argc > 1) {
 		char *test_case_name = argv[1];
+		int test_index = argv[2] ? atoi(argv[2]) : 0;
 		int len = strlen(test_case_name);
 
 		if (strpbrk(test_case_name, "*?") != NULL) {
@@ -118,7 +129,7 @@ int schism_test_main(int argc, char **argv)
 				return 3;
 			}
 
-			result = run_test(test_case);
+			result = run_test(test_case, test_index);
 
 			exit_code = result_to_exit_code(result);
 		}
@@ -129,7 +140,7 @@ int schism_test_main(int argc, char **argv)
 
 		int passed_tests = 0;
 		int failed_tests = 0;
-		int i, j;
+		int i, j, count;
 
 		char buf[15];
 
@@ -139,24 +150,28 @@ int schism_test_main(int argc, char **argv)
 			if (filter_expression && charset_fnmatch(filter_expression, CHARSET_UTF8, automated_tests[i].name, CHARSET_UTF8, CHARSET_FNM_PERIOD) != 0)
 				continue;
 
-			testresult_t result = run_test_child(argv[0], &automated_tests[i]);
+			count = automated_tests[i].testcase ? automated_tests[i].count : 1;
 
-			if (result == SCHISM_TESTRESULT_PASS) {
-				passed_tests++;
-			} else {
-				failed_tests++;
+			for (j = 0; j < count; j++) {
+				testresult_t result = run_test_child(argv[0], &automated_tests[i], j);
 
-				// We assume the crash happened during the test case itself, which means
-				// we've output the name of the test but not the string of dots leading
-				// up to the result.
+				if (result == SCHISM_TESTRESULT_PASS) {
+					passed_tests++;
+				} else {
+					failed_tests++;
 
-				if (result == SCHISM_TESTRESULT_CRASH) {
-					for (j = 6 + strlen(automated_tests[i].name) + 1; j < 78 - TESTRESULT_STR_MAX_LEN; j++)
-						fputc('.', stdout);
+					// We assume the crash happened during the test case itself, which means
+					// we've output the name of the test but not the string of dots leading
+					// up to the result.
 
-					puts(" CRASH");
+					if (result == SCHISM_TESTRESULT_CRASH) {
+						for (j = 6 + strlen(automated_tests[i].name) + 1; j < 78 - TESTRESULT_STR_MAX_LEN; j++)
+							fputc('.', stdout);
 
-					fflush(stdout);
+						puts(" CRASH");
+
+						fflush(stdout);
+					}
 				}
 			}
 		}

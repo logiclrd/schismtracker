@@ -23,6 +23,8 @@
 
 #ifndef TEST_FUNC
 # define TEST_FUNC(x) testresult_t x(void);
+# define TEST_CASE_FUNC(x, count) testresult_t x(int n);
+# define UNDEF_ON_EXIT
 #endif
 
 TEST_FUNC(test_bshift_arithmetic)
@@ -120,4 +122,7 @@ TEST_FUNC(test_song_get_pattern_offset_from_middle_more_than_two_patterns)
 TEST_FUNC(test_song_get_pattern_offset_song_LAST)
 TEST_FUNC(test_song_get_pattern_offset_past_end_of_song)
 
-#undef TEST_FUNC
+#ifdef UNDEF_ON_EXIT
+# undef TEST_FUNC
+# undef TEST_CASE_FUNC
+#endif /* UNDEF_ON_EXIT */

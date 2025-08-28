@@ -21,24 +21,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* assert helper */
+/* executing test name */
 
 #include "test.h"
 #include "test-assertions.h"
-#include "test-name.h"
 
-void test_assert(const char *file, long line, const char *cond, const char *msg, const char *fmt, ...)
+static char *test_name = NULL;
+
+const char *test_get_name(void)
+{
+	return test_name;
+}
+
+void test_set_name(const char *fmt, ...)
 {
 	va_list ap;
+	char *old_test_name = test_name;
 
-	test_log_printf("%s (%s:%ld): %s: %s\n", test_get_name(), file, line, msg, cond);
+	va_start(ap, fmt);
+	if (vasprintf(&test_name, fmt, ap) < 0)
+		test_name = strdup(fmt); // semi-graceful?
+	va_end(ap);
 
-	if (fmt) {
-		va_start(ap, fmt);
-		test_log_vprintf(fmt, ap);
-		va_end(ap);
-		test_log_printf("\n");
-	}
-
-	test_log_printf("\n");
+	// free this last, because the caller might have passed in the old test name as one of the arguments
+	free(old_test_name);
 }

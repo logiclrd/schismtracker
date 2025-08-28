@@ -21,24 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* assert helper */
+#ifndef SCHISM_TEST_NAME_H
+#define SCHISM_TEST_NAME_H_
 
-#include "test.h"
-#include "test-assertions.h"
-#include "test-name.h"
+void test_set_name(const char *fmt, ...);
+const char *test_get_name(void);
 
-void test_assert(const char *file, long line, const char *cond, const char *msg, const char *fmt, ...)
-{
-	va_list ap;
-
-	test_log_printf("%s (%s:%ld): %s: %s\n", test_get_name(), file, line, msg, cond);
-
-	if (fmt) {
-		va_start(ap, fmt);
-		test_log_vprintf(fmt, ap);
-		va_end(ap);
-		test_log_printf("\n");
-	}
-
-	test_log_printf("\n");
-}
+#endif /* SCHISM_TEST_NAME_H_ */

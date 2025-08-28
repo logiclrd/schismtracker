@@ -21,24 +21,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* assert helper */
+#ifndef SCHISM_TEST_CASES_H_
+#define SCHISM_TEST_CASES_H_
 
-#include "test.h"
-#include "test-assertions.h"
-#include "test-name.h"
+#define TEST_FUNC(x)
+#define TEST_CASE_FUNC(x, n) int x##_should_have_##n##_test_cases = 1;
 
-void test_assert(const char *file, long line, const char *cond, const char *msg, const char *fmt, ...)
-{
-	va_list ap;
+#include "test-funcs.h"
 
-	test_log_printf("%s (%s:%ld): %s: %s\n", test_get_name(), file, line, msg, cond);
+#undef TEST_FUNC
+#undef TEST_CASE_FUNC
 
-	if (fmt) {
-		va_start(ap, fmt);
-		test_log_vprintf(fmt, ap);
-		va_end(ap);
-		test_log_printf("\n");
-	}
+#define TEST(x) \
+testresult_t x(void)
 
-	test_log_printf("\n");
-}
+#define TEST_CASES(x, count) \
+static int x##_test_cases(void) { return x##_should_have_##count##_test_cases; } /* HAXXX */ \
+testresult_t x(int test_index)
+
+#endif /* SCHISM_TEST_CASES_H_ */
